@@ -6,7 +6,7 @@ from datetime import timedelta
 from django.shortcuts import render, redirect
 from .forms import AuthForm, RegistrationForm, ConfirmationForm
 from .models import CustomUser
-from .signals import send_confirmation_code, send_one_time_code_email
+from .tasks import send_confirmation_code, send_one_time_code_email
 
 
 def generate_confirmation_code():
@@ -24,7 +24,7 @@ def login_user(request):
             user = authenticate(request, user=request.user, code=code)
 
             if user is not None:
-                send_confirmation_code(user, request)
+                send_confirmation_code.delay(user.pk)
 
                 print(f'Confirmation code sent to user: {code}')
 
@@ -45,7 +45,7 @@ def confirm_code(request):
             code_stored = user.customuser.code
 
             if code_entered == code_stored:
-                # Authentication successful
+
                 return redirect('home')
             else:
                 return redirect('registration')
@@ -66,7 +66,7 @@ def registration_view(request):
             user.code = code
             user.save()
             expiration_time = timezone.now() + timedelta(seconds=60)
-            send_one_time_code_email(user, request)
+            send_one_time_code_email.delay(user.pk)
 
             print(f'One-time code generated: {code}')
 
