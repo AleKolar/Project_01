@@ -7,20 +7,20 @@ class CustomUser(AbstractUser):
     code = models.CharField(max_length=6, blank=True, null=True)
     is_verified = models.BooleanField(default=False)
 
-    class Meta:
-        swappable = 'AUTH_USER_MODEL'
+    # class Meta:
+    #     swappable = 'AUTH_USER_MODEL'
 
 
 class Group(models.Model):
-    user_set = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name='custom_groups')
+    custom_user_set = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name='custom_user_groups')
 
 
 class Permission(models.Model):
-    user_set = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name='custom_permissions')
+    custom_user_set = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name='custom_user_permissions')
 
 
 class Advertisement(models.Model):
-    username = models.ForeignKey(User, on_delete=models.CASCADE)
+    username = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     title = models.CharField(max_length=100)
     text = models.TextField()
     category_choices = [
@@ -39,7 +39,7 @@ class Advertisement(models.Model):
 
 
 class Response(models.Model):
-    username = models.ForeignKey(User, on_delete=models.CASCADE)
+    username = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     advertisement = models.ForeignKey(Advertisement, on_delete=models.CASCADE)
     text = models.TextField()
 

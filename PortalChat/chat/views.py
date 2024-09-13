@@ -5,12 +5,20 @@ from django.utils import timezone
 from datetime import timedelta
 from django.shortcuts import render, redirect
 from .forms import AuthForm, RegistrationForm, ConfirmationForm
-from .models import CustomUser
+from django import forms
 from .tasks import send_confirmation_code, send_one_time_code_email
+from .models import CustomUser
 
 
 def generate_confirmation_code():
     return ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
+
+
+def clean_email(self):
+    email = self.cleaned_data['email']
+    if CustomUser.objects.filter(email=email).exists():
+        raise forms.ValidationError("Такой E-mail уже существует!")
+    return email
 
 
 def login_user(request):
@@ -63,8 +71,8 @@ def registration_view(request):
         form = RegistrationForm(request.POST)
         if form.is_valid():
             user = form.save(commit=False)
+            user.set_password(form.cleaned_data['password'])
             code = generate_confirmation_code()
-            user = form.save(commit=False)
             user.code = code
             user.save()
             expiration_time = timezone.now() + timedelta(seconds=60)
