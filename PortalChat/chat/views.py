@@ -1,6 +1,9 @@
 import random
 import string
 from django.contrib.auth import authenticate
+from django.contrib.auth.forms import AuthenticationForm
+from django.contrib.auth.views import LoginView
+from django.urls import reverse_lazy
 from django.utils import timezone
 from datetime import timedelta
 from django.shortcuts import render, redirect
@@ -21,29 +24,29 @@ def clean_email(self):
     return email
 
 
-def login_user(request):
-    if request.method == 'POST':
-        form = AuthForm(request.POST)
-        if form.is_valid():
-            email = form.cleaned_data['email']
-            password = form.cleaned_data['password']
-            username = form.cleaned_data['username']
-            code = generate_confirmation_code()
-            request.session['confirmation_code'] = code  # Сохраняем код в сессии
-
-            user = authenticate(request, username=username, password=password)
-
-            if user is not None:
-                send_confirmation_code.delay(user.pk)
-
-                print(f'Confirmation code sent to user: {code}')
-
-                return redirect('verify_code')
-
-    else:
-        form = AuthForm()
-
-    return render(request, 'login.html', {'form': form})
+# def login_user(request):
+#     if request.method == 'POST':
+#         form = AuthForm(request.POST)
+#         if form.is_valid():
+#             email = form.cleaned_data['email']
+#             password = form.cleaned_data['password']
+#             username = form.cleaned_data['username']
+#             code = generate_confirmation_code()
+#             request.session['confirmation_code'] = code
+#
+#             user = authenticate(request, username=username, password=password)
+#
+#             if user is not None:
+#                 send_confirmation_code.delay(user.pk)
+#
+#                 print(f'Confirmation code sent to user: {code}')
+#
+#                 return redirect('verify_code')
+#
+#     else:
+#         form = AuthForm()
+#
+#     return render(request, 'login.html', {'form': form})
 
 
 def confirm_code(request):
@@ -100,5 +103,36 @@ def verify_code_view(request):
 
 def home(request):
     return render(request, 'registration_success.html')
+
+
+def login_user(request):
+    if request.user.is_authenticated:
+        user = request.user
+
+        send_confirmation_code.delay(user.pk)
+        print(f'Confirmation code sent to user: {user.code}')
+
+        return redirect('verify_code')
+
+    return render(request, 'login.html', {'form': AuthenticationForm()})
+
+
+class LoginUser(LoginView):
+    form_class = AuthenticationForm
+    template_name = 'login.html'
+    extra_context = {'title': "Авторизация"}
+
+    def form_valid(self, form):
+        response = super().form_valid(form)
+
+        user = self.request.user
+        code = generate_confirmation_code()
+        user.code = code
+        user.save()
+        send_confirmation_code.delay(user.id)
+
+        return response
+
+
 
 
