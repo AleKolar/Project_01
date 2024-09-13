@@ -48,3 +48,4 @@ class Newsletter(models.Model):
     title = models.CharField(max_length=100)
     content = models.TextField()
     sent_date = models.DateTimeField(auto_now_add=True)
+

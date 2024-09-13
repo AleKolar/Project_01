@@ -75,7 +75,7 @@ def registration_view(request):
             code = generate_confirmation_code()
             user.code = code
             user.save()
-            expiration_time = timezone.now() + timedelta(seconds=60)
+            expiration_time = timezone.now() + timedelta(seconds=120)
             send_one_time_code_email.delay(user.pk)
 
             print(f'One-time code generated: {code}')
@@ -100,3 +100,5 @@ def verify_code_view(request):
 
 def home(request):
     return render(request, 'registration_success.html')
+
+

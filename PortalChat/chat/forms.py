@@ -14,8 +14,6 @@ class RegistrationForm(forms.ModelForm):
         fields = ['username', 'email', 'password', 'code']
 
 
-
-
 class AuthForm(forms.ModelForm):
     username = forms.CharField(max_length=150)
     email = forms.EmailField()
