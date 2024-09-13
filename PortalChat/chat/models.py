@@ -1,17 +1,26 @@
-from django.contrib.auth.models import User
+from django.conf import settings
+from django.contrib.auth.models import User, AbstractUser
 from django.db import models
 
 
-class CustomUser(models.Model):
-    username = models.OneToOneField(User, on_delete=models.CASCADE)
-    password = models.CharField(max_length=50)
-    email = models.EmailField(unique=True)
+class CustomUser(AbstractUser):
     code = models.CharField(max_length=6, blank=True, null=True)
     is_verified = models.BooleanField(default=False)
 
+    class Meta:
+        swappable = 'AUTH_USER_MODEL'
+
+
+class Group(models.Model):
+    user_set = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name='custom_groups')
+
+
+class Permission(models.Model):
+    user_set = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name='custom_permissions')
+
 
 class Advertisement(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    username = models.ForeignKey(User, on_delete=models.CASCADE)
     title = models.CharField(max_length=100)
     text = models.TextField()
     category_choices = [

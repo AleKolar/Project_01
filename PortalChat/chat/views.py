@@ -21,7 +21,9 @@ def login_user(request):
             password = form.cleaned_data['password']
             username = form.cleaned_data['username']
             code = generate_confirmation_code()
-            user = authenticate(request, user=request.user, code=code)
+            request.session['confirmation_code'] = code  # Сохраняем код в сессии
+
+            user = authenticate(request, username=username, password=password)
 
             if user is not None:
                 send_confirmation_code.delay(user.pk)
@@ -41,7 +43,7 @@ def confirm_code(request):
         form = ConfirmationForm(request.POST)
         if form.is_valid():
             code_entered = form.cleaned_data['code']
-            user = request.user  # Assuming user is authenticated
+            user = request.user
             code_stored = user.customuser.code
 
             if code_entered == code_stored:
@@ -76,7 +78,6 @@ def registration_view(request):
     else:
         form = RegistrationForm()
         return render(request, 'registration.html', {'form': form})
-
 
 
 def verify_code_view(request):
