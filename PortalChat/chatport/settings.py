@@ -142,3 +142,5 @@ APSCHEDULER_RUN_NOW_TIMEOUT = 25
 CELERY_BROKER_URL = 'amqp://guest:guest@localhost:5672//'
 
 CELERY_RESULT_BACKEND = 'rpc://'
+
+# AUTH_USER_MODEL = 'chat.CustomUser'

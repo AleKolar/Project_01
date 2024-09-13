@@ -72,7 +72,7 @@ def registration_view(request):
 
             print(f'One-time code generated: {code}')
 
-            return render(request, 'verify_code.htm', {'form': form})
+            return render(request, 'verify_code.html', {'form': form})
         else:
             return render(request, 'registration.html', {'form': form})
     else:
