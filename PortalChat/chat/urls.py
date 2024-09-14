@@ -1,7 +1,7 @@
 from django.urls import path
 
 from . import views
-from .views import registration_view, verify_code_view, home, LoginUser, login_user
+from .views import registration_view, verify_code_view, home, LoginUser, login_user, AdvertisementCreateView
 
 urlpatterns = [
     path('signup/', registration_view, name='registration'),
@@ -19,5 +19,13 @@ urlpatterns = [
 
     path('private/', views.user_responses, name='private'),
 
+    path('advertisement_create/', AdvertisementCreateView.as_view(), name='advertisement_create'),
+    path('create_response/<int:advertisement_id>/', views.create_response, name='response_create'),
+
+    path('accounts/create_response/<int:advertisement_id>/', views.create_response, name='response_create'),
+    path('create_response/<int:advertisement_id>/', views.create_response, name='create_response'),
+
+    path('response/accept/<int:response_id>/', views.accept_response, name='accept_response'),
+    path('accounts/create_response/<int:response_id>/', views.accept_response, name='accept_response'),
 
 ]

@@ -13,15 +13,22 @@
     <h2>Все объявления:</h2>
     <ul>
         {% for advertisement in all_advertisements %}
-            <li>{{ advertisement.title }} - {{ advertisement.category }}</li>
-        {% endfor %}
-    </ul>
+            <li>{{ advertisement.title }} - {{ advertisement.category }}
+                <form action="{% url 'create_response' advertisement.id %}" method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="advertisement_id" value="{{ advertisement.id }}">
+                    <button type="submit">Создать отклик</button>
+                </form>
 
-    <!-- Отображение всех откликов -->
-    <h2>Все отклики:</h2>
-    <ul>
-        {% for response in all_responses %}
-            <li>{{ response.content }} - {{ response.advertisement.title }} - {{ response.advertisement.category }}</li>
+                <!-- Отображение откликов, связанных с текущим объявлением -->
+                <ul>
+                    {% for response in all_responses %}
+                        {% if response.advertisement.id == advertisement.id %}
+                            <li>{{ response.content }}</li>
+                        {% endif %}
+                    {% endfor %}
+                </ul>
+            </li>
         {% endfor %}
     </ul>
 

@@ -37,10 +37,14 @@ class ConfirmationForm(forms.ModelForm):
 class AdvertisementForm(forms.ModelForm):
     class Meta:
         model = Advertisement
-        fields = ['title', 'text', 'category']
+        fields = ['title', 'text', 'category', 'image']
 
 
 class NewsletterForm(forms.ModelForm):
     class Meta:
         model = Newsletter
         fields = ['title', 'content', 'recipients']
+
+
+class ResponseForm(forms.Form):
+    content = forms.CharField(label='Текст отклика', widget=forms.Textarea)

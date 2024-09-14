@@ -1,16 +1,19 @@
+import logging
 import random
 import string
-from django.contrib.auth import authenticate
 from django.contrib.auth.decorators import permission_required
 from django.contrib.auth.forms import AuthenticationForm
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.views import LoginView
+from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
+from django.http import HttpResponse
 from django.urls import reverse_lazy
 from django.utils import timezone
 from datetime import timedelta
 from django.shortcuts import render, redirect, get_object_or_404
 from django.views.generic import CreateView
 
-from .forms import AuthForm, RegistrationForm, ConfirmationForm, AdvertisementForm
+from .forms import RegistrationForm, ConfirmationForm, AdvertisementForm, ResponseForm
 from django import forms
 from .tasks import send_confirmation_code, send_one_time_code_email, send_response_notification_task, \
     send_response_email
@@ -172,18 +175,40 @@ def edit_advertisement(request, pk):
 # ДОМАШНЯЯ
 def home(request):
     all_responses = Response.objects.all()
-    all_advertisements = Advertisement.objects.all()
+    all_advertisements = Advertisement.objects.all().order_by(
+        '-id')  # Сортировка по убыванию id (более поздние записи сначала)
     admin_news = Newsletter.objects.filter(sent_date__isnull=False)
 
-    return render(request, 'home.html', {'all_responses': all_responses, 'all_advertisements': all_advertisements, 'admin_news': admin_news})
+    paginator = Paginator(all_advertisements, 10)  # Разбиваем объявления на страницы, по 10 объявлений на страницу
+    page = request.GET.get('page')
+
+    try:
+        all_advertisements = paginator.page(page)
+    except PageNotAnInteger:
+        all_advertisements = paginator.page(1)
+    except EmptyPage:
+        all_advertisements = paginator.page(paginator.num_pages)
+
+    return render(request, 'home.html',
+                  {'all_responses': all_responses, 'all_advertisements': all_advertisements, 'admin_news': admin_news})
 
 
-# СОЗДАЕМ ОБЪЯВЛЕНИЕ
-class AdvertisementCreateView(CreateView):
+# СОЗДАЕМ ОБЪЯВЛЕНИЕ С МЕДИА
+logger = logging.getLogger(__name__)
+
+
+class AdvertisementCreateView(LoginRequiredMixin, CreateView):
     model = Advertisement
-    fields = ['title', 'text', 'category']
+    fields = ['title', 'text', 'category', 'image']
+    template_name = 'advertisement_create.html'
+
+    # success_url = reverse_lazy('home')
+    def get_success_url(self):
+        from django.urls import reverse
+        return reverse('home')
 
     def form_valid(self, form):
+        form.instance.username_id = self.request.user.id  # Заполнение username_id текущего пользователя
         category = form.cleaned_data.get('category')
         valid_categories = ['Tanks', 'Healers', 'DPS', 'Traders', 'Guild Masters', 'Quest Givers', 'Blacksmiths',
                             'Leatherworkers', 'Alchemists', 'Spellcasters']
@@ -191,22 +216,37 @@ class AdvertisementCreateView(CreateView):
         if category not in valid_categories:
             form.add_error('category',
                            'Выберите категорию из списка: Танки, Хилы, ДД, Торговцы, Гилдмастеры, Квестгиверы, Кузнецы, Кожевники, Зельевары, Мастера заклинаний')
+            logger.error('Выбранная категория не допустима: %s', category)
             return self.form_invalid(form)
 
         return super().form_valid(form)
 
-    success_url = reverse_lazy('home')
+    def post(self, request, *args, **kwargs):
+        form = self.get_form()
+        if form.is_valid():
+            logger.info('Данные формы действительны. Попытка сохранения в базу данных.')
+            return self.form_valid(form)
+        else:
+            logger.error('Данные формы недействительны.')
+            return self.form_invalid(form)
 
 
 # СОЗДАЮ ОТКЛИК
 def create_response(request, advertisement_id):
     advertisement = Advertisement.objects.get(id=advertisement_id)
     if request.method == 'POST':
-        text = request.POST.get('text')
-        response = Response(username=request.user, advertisement=advertisement, text=text)
-        response.save()
-        send_response_notification_task.delay(advertisement.id, text)
-        return redirect('advertisement_detail', pk=advertisement_id)
+        form = ResponseForm(request.POST)
+        if form.is_valid():
+            text = form.cleaned_data['content']
+            user = request.user
+            response = Response(user=user, advertisement=advertisement, content=text)
+            response.save()
+            send_response_notification_task.delay(advertisement.id, text)
+            return redirect('home')
+    else:
+        form = ResponseForm()
+
+    return render(request, 'create_response.html', {'form': form, 'advertisement_id': advertisement_id})
 
 
 # ОТПРАВКА УВЕДОМЛЕНИЙ
@@ -240,9 +280,10 @@ def send_response_notification(advertisement, response_text):
 
 def user_responses(request):
     form = AdvertisementForm()
-    user_responses = Response.objects.filter(user=request.user)
+    user_responses = Response.objects.filter(user=request.user.id)
 
     return render(request, 'private.html', {'form': form, 'user_responses': user_responses})
+
 
 def delete_response(request, response_id):
     response = get_object_or_404(Response, id=response_id)
