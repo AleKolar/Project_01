@@ -1,14 +1,15 @@
 from django.conf import settings
 from django.contrib.auth.models import User, AbstractUser
 from django.db import models
+from ckeditor.fields import RichTextField
 
 
 class CustomUser(AbstractUser):
     code = models.CharField(max_length=6, blank=True, null=True)
     is_verified = models.BooleanField(default=False)
 
-    # class Meta:
-    #     swappable = 'AUTH_USER_MODEL'
+    class Meta:
+        swappable = 'AUTH_USER_MODEL'
 
 
 class Group(models.Model):
@@ -23,6 +24,7 @@ class Advertisement(models.Model):
     username = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     title = models.CharField(max_length=100)
     text = models.TextField()
+    content = RichTextField()  # Поле для содержания контента с использованием WYSIWYG-поля
     category_choices = [
         ('Tanks', 'Танки'),
         ('Healers', 'Хилы'),
@@ -37,15 +39,21 @@ class Advertisement(models.Model):
     ]
     category = models.CharField(max_length=20, choices=category_choices)
 
+    def __str__(self):
+        return self.title
+
 
 class Response(models.Model):
-    username = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    advertisement = models.ForeignKey(Advertisement, on_delete=models.CASCADE)
-    text = models.TextField()
+    advertisement = models.ForeignKey(Advertisement, on_delete=models.CASCADE, related_name='responses')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    content = models.TextField()
+
+    def __str__(self):
+        return f'Response to {self.advertisement.title}'
 
 
 class Newsletter(models.Model):
     title = models.CharField(max_length=100)
     content = models.TextField()
+    recipients = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name='newsletters')
     sent_date = models.DateTimeField(auto_now_add=True)
-

@@ -1,4 +1,6 @@
 from django.urls import path
+
+from . import views
 from .views import registration_view, verify_code_view, home, LoginUser, login_user
 
 urlpatterns = [
@@ -10,6 +12,10 @@ urlpatterns = [
     path('login/', LoginUser.as_view(), name='login'),
     path('verify/', verify_code_view, name='verify_code'),
     path('home', home, name='registration_success'),
+
+    path('user/responses/', views.user_responses, name='user_responses'),
+    path('response/delete/<int:response_id>/', views.delete_response, name='delete_response'),
+    path('response/accept/<int:response_id>/', views.accept_response, name='accept_response'),
 
 
 ]

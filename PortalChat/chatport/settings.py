@@ -123,24 +123,26 @@ STATICFILES_DIRS = [os.path.join(BASE_DIR, 'chat', 'static'), ]
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+
 EMAIL_HOST = 'smtp.yandex.ru'
 EMAIL_PORT = 465
 EMAIL_HOST_USER = 'qefest-173'
 EMAIL_HOST_PASSWORD = 'Mn14071979'
 EMAIL_USE_SSL = True
 
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 
-DEFAULT_FROM_EMAIL = 'Mn14071979'
 
-ACCOUNT_EMAIL_CONFIRMATION_EXPIRE_DAYS = 20
-
-APSCHEDULER_DATETIME_FORMAT = "N j, Y, f:s a"
-
-APSCHEDULER_RUN_NOW_TIMEOUT = 25
-
-CELERY_BROKER_URL = 'amqp://guest:guest@localhost:5672//'
-
-CELERY_RESULT_BACKEND = 'rpc://'
+# DEFAULT_FROM_EMAIL = 'Mn14071979'
+#
+# ACCOUNT_EMAIL_CONFIRMATION_EXPIRE_DAYS = 20
+#
+# APSCHEDULER_DATETIME_FORMAT = "N j, Y, f:s a"
+#
+# APSCHEDULER_RUN_NOW_TIMEOUT = 25
+#
+# CELERY_BROKER_URL = 'amqp://guest:guest@localhost:5672//'
+#
+# CELERY_RESULT_BACKEND = 'rpc://'
 
 AUTH_USER_MODEL = 'chat.CustomUser'

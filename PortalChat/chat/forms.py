@@ -2,6 +2,8 @@ from django import forms
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import User
 
+from .models import Advertisement, Newsletter
+
 
 class RegistrationForm(forms.ModelForm):
     code = forms.CharField(max_length=6, required=False)
@@ -30,3 +32,15 @@ class ConfirmationForm(forms.ModelForm):
     class Meta:
         model = User
         fields = ['code']
+
+
+class AdvertisementForm(forms.ModelForm):
+    class Meta:
+        model = Advertisement
+        fields = ['title', 'text', 'category']
+
+
+class NewsletterForm(forms.ModelForm):
+    class Meta:
+        model = Newsletter
+        fields = ['title', 'content', 'recipients']

@@ -1,0 +1,17 @@
+{% extends "default.html" %}
+
+{% block content %}
+<html>
+<head>
+    <title>Главная страница</title>
+</head>
+<body>
+    <h1>Объявления</h1>
+    <ul>
+        {% for advertisement in advertisements %}
+            <li>{{ advertisement.title }} - {{ advertisement.text }} - {{ advertisement.category }}</li>
+        {% endfor %}
+    </ul>
+</body>
+</html>
+{% endblock %}
