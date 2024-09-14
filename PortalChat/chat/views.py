@@ -17,12 +17,6 @@ from .tasks import send_confirmation_code, send_one_time_code_email, send_respon
 from .models import CustomUser, Advertisement, Response
 
 
-
-# ДОМАШНЯЯ
-def home(request):
-    advertisements = Advertisement.objects.all()
-    return render(request, 'home.html', {'advertisements': advertisements})
-
 def generate_confirmation_code():
     return ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
 
@@ -78,6 +72,7 @@ def confirm_code(request):
 
     return render(request, 'confirm_code_template.html', {'form': form})
 
+
 # РЕГИСТРАЦИЯ
 def registration_view(request):
     if request.method == 'POST':
@@ -100,6 +95,7 @@ def registration_view(request):
         form = RegistrationForm()
         return render(request, 'registration.html', {'form': form})
 
+
 # ВВОДИМ КОД ПОДТВЕРЖДЕНИЯ
 def verify_code_view(request):
     if request.method == 'POST':
@@ -107,12 +103,9 @@ def verify_code_view(request):
         user = CustomUser.objects.get(code=code)
         user.is_verified = True
         user.save()
-        return render(request, 'registration_success.html')
+        return render(request, 'home.html')
     return render(request, 'verify_code.html')
 
-# ПРИ УСПЕХЕ
-def home(request):
-    return render(request, 'registration_success.html')
 
 # ОТПРАВЛЯЕТ КОД НА ПОЧТУ
 def login_user(request):
@@ -144,6 +137,7 @@ class LoginUser(LoginView):
 
         return response
 
+
 # ЗАРЕГИСТРИРОВАННЫХ НАДЕЛЯЕМ ПОЛНОМОЧИЯМИ
 @permission_required('chat.add_advertisement', raise_exception=True)
 def create_advertisement(request):
@@ -173,6 +167,12 @@ def edit_advertisement(request, pk):
         return render(request, 'edit_advertisement.html', {'form': form})
     else:
         return redirect('home')
+
+
+# ДОМАШНЯЯ
+def home(request):
+    advertisements = Advertisement.objects.all()
+    return render(request, 'home.html', {'advertisements': advertisements})
 
 
 # СОЗДАЕМ ОБЪЯВЛЕНИЕ
@@ -213,25 +213,38 @@ def send_response_notification(advertisement, response_text):
 
 
 # ДЛЯ ПРИВАТНОЙ СИРАНИЦЫ, ГДЕ ОТКЛИКИ СОЗДАННЫЕ ПОЛЬЗОВАТЕЛЕМ
+# def user_responses(request):
+#     form = AdvertisementForm()
+#     user_responses = Response.objects.filter(user=request.user)
+#
+#     # Фильтрация по id объявления
+#     # advertisement_id = request.GET.get('advertisement_id')
+#     # if advertisement_id:
+#     #     user_responses = user_responses.filter(advertisement_id=advertisement_id)
+#
+#     # Фильтрация по названию объявления
+#     advertisement_title = request.GET.get('title')
+#     if advertisement_title:
+#         user_responses = user_responses.filter(advertisement__title=advertisement_title)
+#
+#     # Фильтрация по категории объявления
+#     category = request.GET.get('category')
+#     if category:
+#         user_responses = user_responses.filter(advertisement__category=category)
+#
+#     return render(request, 'private.html', {'form': form, 'user_responses': user_responses})
+
+
 def user_responses(request):
-    user_responses = Response.objects.filter(username=request.user)
+    form = AdvertisementForm()
+    user_responses = Response.objects.filter(user=request.user)
 
-    # Фильтрауем по объявлению (по id объявления)
-    advertisement_id = request.GET.get('advertisement_id')
-    if advertisement_id:
-        user_responses = user_responses.filter(advertisement_id=advertisement_id)
-
-    advertisement_title = request.GET.get('title')
-    if advertisement_title:
-        user_responses = user_responses.filter(advertisement__title=advertisement_title)
-
-    return render(request, 'user_responses.html', {'user_responses': user_responses})
-
+    return render(request, 'private.html', {'form': form, 'user_responses': user_responses})
 
 def delete_response(request, response_id):
     response = get_object_or_404(Response, id=response_id)
     response.delete()
-    return redirect('user_responses')
+    return redirect('private')
 
 
 def accept_response(request, response_id):
@@ -244,4 +257,4 @@ def accept_response(request, response_id):
     # Отправка уведомления user, оставившему отклик
     send_response_notification_task.delay(response.advertisement.id, response.text)
 
-    return redirect('user_responses')
+    return redirect('private')

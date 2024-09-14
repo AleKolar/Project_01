@@ -1,0 +1,31 @@
+{% extends "default.html" %}
+
+{% block content %}
+<h1>Отклики пользователя</h1>
+
+<!-- Форма для фильтрации откликов -->
+<form method="GET">
+    <label for="title">Фильтр по названию объявления:</label>
+    <input type="text" name="title" id="title" value="{{ request.GET.title }}">
+
+    <label for="category">Фильтр по категории объявления:</label>
+    <select name="category" id="category">
+        <option value="">Выберите категорию</option>
+        {% for category_key, category_name in form.fields.category.choices %}
+            <option value="{{ category_key }}" {% if request.GET.category == category_key %}selected{% endif %}>{{ category_name }}</option>
+        {% endfor %}
+    </select>
+
+    <button type="submit">Применить фильтры</button>
+</form>
+
+<!-- Отображение отфильтрованных откликов пользователя -->
+<ul>
+    {% for response in user_responses %}
+        <li>{{ response.content }} - {{ response.advertisement.title }} - {{ response.advertisement.category }}</li>
+    {% empty %}
+        <li>Нет откликов соответствующих выбранным фильтрам</li>
+    {% endfor %}
+</ul>
+
+{% endblock %}
