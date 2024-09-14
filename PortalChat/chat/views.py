@@ -14,7 +14,7 @@ from .forms import AuthForm, RegistrationForm, ConfirmationForm, AdvertisementFo
 from django import forms
 from .tasks import send_confirmation_code, send_one_time_code_email, send_response_notification_task, \
     send_response_email
-from .models import CustomUser, Advertisement, Response
+from .models import CustomUser, Advertisement, Response, Newsletter
 
 
 def generate_confirmation_code():
@@ -171,8 +171,11 @@ def edit_advertisement(request, pk):
 
 # ДОМАШНЯЯ
 def home(request):
-    advertisements = Advertisement.objects.all()
-    return render(request, 'home.html', {'advertisements': advertisements})
+    all_responses = Response.objects.all()
+    all_advertisements = Advertisement.objects.all()
+    admin_news = Newsletter.objects.filter(sent_date__isnull=False)
+
+    return render(request, 'home.html', {'all_responses': all_responses, 'all_advertisements': all_advertisements, 'admin_news': admin_news})
 
 
 # СОЗДАЕМ ОБЪЯВЛЕНИЕ
