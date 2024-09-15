@@ -142,34 +142,34 @@ class LoginUser(LoginView):
 
 
 # ЗАРЕГИСТРИРОВАННЫХ НАДЕЛЯЕМ ПОЛНОМОЧИЯМИ
-@permission_required('chat.add_advertisement', raise_exception=True)
-def create_advertisement(request):
-    if request.method == 'POST':
-        form = AdvertisementForm(request.POST)
-        if form.is_valid():
-            advertisement = form.save(commit=False)
-            advertisement.username = request.user
-            advertisement.save()
-            return redirect('advertisement_detail', pk=advertisement.pk)
-    else:
-        form = AdvertisementForm()
-    return render(request, 'create_advertisement.html', {'form': form})
+# @permission_required('chat.add_advertisement', raise_exception=True)
+# def create_advertisement(request):
+#     if request.method == 'POST':
+#         form = AdvertisementForm(request.POST)
+#         if form.is_valid():
+#             advertisement = form.save(commit=False)
+#             advertisement.username = request.user
+#             advertisement.save()
+#             return redirect('advertisement_detail', pk=advertisement.pk)
+#     else:
+#         form = AdvertisementForm()
+#     return render(request, 'create_advertisement.html', {'form': form})
 
 
-@permission_required('chat.change_advertisement', raise_exception=True)
-def edit_advertisement(request, pk):
-    advertisement = Advertisement.objects.get(pk=pk)
-    if request.user == advertisement.username:
-        if request.method == 'POST':
-            form = AdvertisementForm(request.POST, instance=advertisement)
-            if form.is_valid():
-                form.save()
-                return redirect('advertisement_detail', pk=pk)
-        else:
-            form = AdvertisementForm(instance=advertisement)
-        return render(request, 'edit_advertisement.html', {'form': form})
-    else:
-        return redirect('home')
+# @permission_required('chat.change_advertisement', raise_exception=True)
+# def edit_advertisement(request, pk):
+#     advertisement = Advertisement.objects.get(pk=pk)
+#     if request.user == advertisement.username:
+#         if request.method == 'POST':
+#             form = AdvertisementForm(request.POST, instance=advertisement)
+#             if form.is_valid():
+#                 form.save()
+#                 return redirect('advertisement_detail', pk=pk)
+#         else:
+#             form = AdvertisementForm(instance=advertisement)
+#         return render(request, 'edit_advertisement.html', {'form': form})
+#     else:
+#         return redirect('home')
 
 
 # ДОМАШНЯЯ
