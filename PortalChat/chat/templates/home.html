@@ -12,33 +12,30 @@
     <!-- Отображение всех объявлений -->
     <h2>Все объявления:</h2>
     <ul>
-        {% for advertisement in all_advertisements %}
-            <li>{{ advertisement.title }} - {{ advertisement.category }}
-                <form action="{% url 'create_response' advertisement.id %}" method="post">
-                    {% csrf_token %}
-                    <input type="hidden" name="advertisement_id" value="{{ advertisement.id }}">
-                    <button type="submit">Создать отклик</button>
-                </form>
+    <!-- Отображение всех объявлений -->
+    {% for advertisement in all_advertisements %}
+    <li>
+        <h3>{{ advertisement.title }}</h3>
+        <p>{{ advertisement.text }}</p>
+        <img src="{{ advertisement.image.url }}" alt="{{ advertisement.title }}">
 
-                <!-- Отображение откликов, связанных с текущим объявлением -->
-                <ul>
-                    {% for response in all_responses %}
-                        {% if response.advertisement.id == advertisement.id %}
-                            <li>{{ response.content }}</li>
-                        {% endif %}
-                    {% endfor %}
-                </ul>
-            </li>
-        {% endfor %}
-    </ul>
+        <!-- Форма для создания отклика -->
+        <form action="{% url 'create_response' advertisement_id=advertisement.advertisement_id %}" method="post">
+            {% csrf_token %}
+            <button type="submit">Создать отклик</button>
+        </form>
 
-    <!-- Отображение новостной рассылки от администратора -->
-    <h2>Новостная рассылка от администратора:</h2>
-    <ul>
-        {% for news_item in admin_news %}
-            <li>{{ news_item.title }} - {{ news_item.content }}</li>
-        {% endfor %}
-    </ul>
+        <!-- Отображение всех откликов к данному объявлению -->
+        <ul>
+            {% for response in advertisement.responses.all %}
+                <li>
+                    <p>{{ response.content }}</p>
+                </li>
+            {% endfor %}
+        </ul>
+    </li>
+    {% endfor %}
+</ul>
     <a href="{% url 'private' %}">Перейти на страницу 'private'</a>
 
 </body>
