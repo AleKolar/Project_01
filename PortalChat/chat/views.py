@@ -175,8 +175,7 @@ class LoginUser(LoginView):
 # ДОМАШНЯЯ
 def home(request):
     all_responses = Response.objects.all()
-    all_advertisements = Advertisement.objects.all().order_by(
-        '-id')  # Сортировка по убыванию id (более поздние записи сначала)
+    all_advertisements = Advertisement.objects.all().order_by('-advertisement_id') 
     admin_news = Newsletter.objects.filter(sent_date__isnull=False)
 
     paginator = Paginator(all_advertisements, 10)  # Разбиваем объявления на страницы, по 10 объявлений на страницу
