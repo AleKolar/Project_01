@@ -147,3 +147,10 @@ CELERY_BROKER_URL = 'amqp://guest:guest@localhost:5672//'
 CELERY_RESULT_BACKEND = 'rpc://'
 
 AUTH_USER_MODEL = 'chat.CustomUser'
+
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+MAX_UPLOAD_SIZE = "5242880"  # 5MB (в байтах)
+MAX_UPLOAD_VIDEO_SIZE = "104857600"  # 100MB (в байтах)

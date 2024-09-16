@@ -1,3 +1,5 @@
+from django.conf import settings
+from django.conf.urls.static import static
 from django.urls import path
 
 from . import views
@@ -29,7 +31,4 @@ urlpatterns = [
     path('response/accept/<int:response_id>/', views.accept_response, name='accept_response'),
     path('accounts/create_response/<int:response_id>/', views.accept_response, name='accept_response'),
 
-
-
-
-]
+] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
