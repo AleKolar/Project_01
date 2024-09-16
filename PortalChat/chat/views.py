@@ -1,23 +1,30 @@
 import logging
 import random
 import string
-from django.contrib.auth.decorators import permission_required
+from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.views import LoginView
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
-from django.http import HttpResponse
-from django.urls import reverse_lazy
 from django.utils import timezone
 from datetime import timedelta
 from django.shortcuts import render, redirect, get_object_or_404
-from django.views.generic import CreateView
-
+from .filter import filter_user_responses
 from .forms import RegistrationForm, ConfirmationForm, AdvertisementForm, ResponseForm
 from django import forms
 from .tasks import send_confirmation_code, send_one_time_code_email, send_response_notification_task, \
     send_response_email
 from .models import CustomUser, Advertisement, Response, Newsletter
+import os
+from django.conf import settings
+from django.views.generic.edit import CreateView
+from django.urls import reverse_lazy
+from .models import Advertisement
+from PIL import Image
+from moviepy.editor import VideoFileClip
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.core.exceptions import PermissionDenied
+from django.views.generic.edit import UpdateView
 
 
 def generate_confirmation_code():
@@ -31,31 +38,7 @@ def clean_email(self):
     return email
 
 
-# def login_user(request):
-#     if request.method == 'POST':
-#         form = AuthForm(request.POST)
-#         if form.is_valid():
-#             email = form.cleaned_data['email']
-#             password = form.cleaned_data['password']
-#             username = form.cleaned_data['username']
-#             code = generate_confirmation_code()
-#             request.session['confirmation_code'] = code
-#
-#             user = authenticate(request, username=username, password=password)
-#
-#             if user is not None:
-#                 send_confirmation_code.delay(user.pk)
-#
-#                 print(f'Confirmation code sent to user: {code}')
-#
-#                 return redirect('verify_code')
-#
-#     else:
-#         form = AuthForm()
-#
-#     return render(request, 'login.html', {'form': form})
-
-
+# ПРОВЕРКА КООДА В БД
 def confirm_code(request):
     if request.method == 'POST':
         form = ConfirmationForm(request.POST)
@@ -142,40 +125,12 @@ class LoginUser(LoginView):
 
 
 # ЗАРЕГИСТРИРОВАННЫХ НАДЕЛЯЕМ ПОЛНОМОЧИЯМИ
-# @permission_required('chat.add_advertisement', raise_exception=True)
-# def create_advertisement(request):
-#     if request.method == 'POST':
-#         form = AdvertisementForm(request.POST)
-#         if form.is_valid():
-#             advertisement = form.save(commit=False)
-#             advertisement.username = request.user
-#             advertisement.save()
-#             return redirect('advertisement_detail', pk=advertisement.pk)
-#     else:
-#         form = AdvertisementForm()
-#     return render(request, 'create_advertisement.html', {'form': form})
-
-
-# @permission_required('chat.change_advertisement', raise_exception=True)
-# def edit_advertisement(request, pk):
-#     advertisement = Advertisement.objects.get(pk=pk)
-#     if request.user == advertisement.username:
-#         if request.method == 'POST':
-#             form = AdvertisementForm(request.POST, instance=advertisement)
-#             if form.is_valid():
-#                 form.save()
-#                 return redirect('advertisement_detail', pk=pk)
-#         else:
-#             form = AdvertisementForm(instance=advertisement)
-#         return render(request, 'edit_advertisement.html', {'form': form})
-#     else:
-#         return redirect('home')
 
 
 # ДОМАШНЯЯ
 def home(request):
     all_responses = Response.objects.all()
-    all_advertisements = Advertisement.objects.all().order_by('-advertisement_id') 
+    all_advertisements = Advertisement.objects.all().order_by('-advertisement_id')
     admin_news = Newsletter.objects.filter(sent_date__isnull=False)
 
     paginator = Paginator(all_advertisements, 10)  # Разбиваем объявления на страницы, по 10 объявлений на страницу
@@ -192,22 +147,30 @@ def home(request):
                   {'all_responses': all_responses, 'all_advertisements': all_advertisements, 'admin_news': admin_news})
 
 
-# СОЗДАЕМ ОБЪЯВЛЕНИЕ С МЕДИА
 logger = logging.getLogger(__name__)
 
 
+# СОЗДАЕМ ОБЪЯВЛЕНИЕ
+
 class AdvertisementCreateView(LoginRequiredMixin, CreateView):
     model = Advertisement
-    fields = ['title', 'text', 'category', 'image']
+    fields = ['title', 'text', 'category', 'image', 'video']
     template_name = 'advertisement_create.html'
 
-    # success_url = reverse_lazy('home')
-    def get_success_url(self):
-        from django.urls import reverse
-        return reverse('home')
+    @staticmethod
+    def resize_image(image, output_path, width, height):
+        img = Image.open(image)
+        img_resized = img.resize((width, height))
+        img_resized.save(output_path)
+
+    @staticmethod
+    def resize_video(video, output_path, width, height):
+        video = VideoFileClip(video.temporary_file_path())
+        video_resized = video.resize(width=width, height=height)
+        video_resized.write_videofile(output_path)
 
     def form_valid(self, form):
-        form.instance.username_id = self.request.user.id  # Заполнение username_id текущего пользователя
+        form.instance.user_id = self.request.user.id
         category = form.cleaned_data.get('category')
         valid_categories = ['Tanks', 'Healers', 'DPS', 'Traders', 'Guild Masters', 'Quest Givers', 'Blacksmiths',
                             'Leatherworkers', 'Alchemists', 'Spellcasters']
@@ -215,24 +178,110 @@ class AdvertisementCreateView(LoginRequiredMixin, CreateView):
         if category not in valid_categories:
             form.add_error('category',
                            'Выберите категорию из списка: Танки, Хилы, ДД, Торговцы, Гилдмастеры, Квестгиверы, Кузнецы, Кожевники, Зельевары, Мастера заклинаний')
-            logger.error('Выбранная категория не допустима: %s', category)
             return self.form_invalid(form)
+
+        images_path = os.path.join(settings.MEDIA_ROOT, 'images')
+        os.makedirs(images_path, exist_ok=True)
+
+        # Изменение размера изображения до 200x150 пикселей
+        if form.cleaned_data.get('image'):
+            image = form.cleaned_data.get('image')
+            image_output_path = os.path.join(images_path, image.name)
+            self.resize_image(image, image_output_path, 200, 150)
+            form.instance.image = image_output_path
+
+        videos_path = os.path.join(settings.MEDIA_ROOT, 'videos')
+        os.makedirs(videos_path, exist_ok=True)
+
+        # Изменение размера видео до ширины 640 пикселей
+        if form.cleaned_data.get('video'):
+            video = form.cleaned_data.get('video')
+            video_output_path = os.path.join(videos_path, video.name)
+            self.resize_video(video, video_output_path, 640, 480)
+            form.instance.video = video_output_path
 
         return super().form_valid(form)
 
-    def post(self, request, *args, **kwargs):
-        form = self.get_form()
-        if form.is_valid():
-            logger.info('Данные формы действительны. Попытка сохранения в базу данных.')
-            return self.form_valid(form)
-        else:
-            logger.error('Данные формы недействительны.')
+    success_url = reverse_lazy('home')
+
+
+# ШАБЛОН РЕДАКТИРОВАНИЯ ОБЪЯВЛЕНИЙ
+class AdvertisementUpdateView(LoginRequiredMixin, UpdateView):
+    model = Advertisement
+    fields = ['title', 'text', 'category', 'image', 'video']
+    template_name = 'advertisement_update.html'
+
+    def dispatch(self, request, *args, **kwargs):
+        obj = self.get_object()
+        if obj.user != self.request.user:
+            raise PermissionDenied
+        return super().dispatch(request, *args, **kwargs)
+
+    @staticmethod
+    def resize_image(image, output_path, width, height):
+        img = Image.open(image)
+        img_resized = img.resize((width, height))
+        img_resized.save(output_path)
+
+    @staticmethod
+    def resize_video(video, output_path, width, height):
+        video = VideoFileClip(video.temporary_file_path())
+        video_resized = video.resize(width=width, height=height)
+        video_resized.write_videofile(output_path)
+
+    def form_valid(self, form):
+        form.instance.user_id = self.request.user.id
+        category = form.cleaned_data.get('category')
+        valid_categories = ['Tanks', 'Healers', 'DPS', 'Traders', 'Guild Masters', 'Quest Givers', 'Blacksmiths',
+                            'Leatherworkers', 'Alchemists', 'Spellcasters']
+
+        if category not in valid_categories:
+            form.add_error('category',
+                           'Выберите категорию из списка: Танки, Хилы, ДД, Торговцы, Гилдмастеры, Квестгиверы, Кузнецы, Кожевники, Зельевары, Мастера заклинаний')
             return self.form_invalid(form)
+
+        images_path = os.path.join(settings.MEDIA_ROOT, 'images')
+        os.makedirs(images_path, exist_ok=True)
+
+        # Изменение размера изображения до 200x150 пикселей
+        if form.cleaned_data.get('image'):
+            image = form.cleaned_data.get('image')
+            image_output_path = os.path.join(images_path, image.name)
+            self.resize_image(image, image_output_path, 200, 150)
+            form.instance.image = image_output_path
+
+        videos_path = os.path.join(settings.MEDIA_ROOT, 'videos')
+        os.makedirs(videos_path, exist_ok=True)
+
+        # Изменение размера видео до ширины 640 пикселей
+        if form.cleaned_data.get('video'):
+            video = form.cleaned_data.get('video')
+            video_output_path = os.path.join(videos_path, video.name)
+            self.resize_video(video, video_output_path, 640, 480)
+            form.instance.video = video_output_path
+
+        return super().form_valid(form)
+
+    success_url = reverse_lazy('home')
+
+
+# ДЛЯ ФИЛЬТРАЦИИ ОТКЛИКОВ ПОЛЬЗ-ЛЯ
+def user_responses(request, advertisement_id=None):
+    form = AdvertisementForm()
+    user_id = request.user.id
+    user_responses = filter_user_responses(user_id, title=request.GET.get('title'),
+                                           category=request.GET.get('category'), advertisement_id=advertisement_id)
+
+    user_advertisements = Advertisement.objects.filter(user_id=user_id)
+
+    return render(request, 'private.html',
+                  {'form': form, 'user_responses': user_responses, 'user_advertisements': user_advertisements})
 
 
 # СОЗДАЮ ОТКЛИК
+@login_required
 def create_response(request, advertisement_id):
-    advertisement = Advertisement.objects.get(id=advertisement_id)
+    advertisement = Advertisement.objects.get(advertisement_id=advertisement_id)
     if request.method == 'POST':
         form = ResponseForm(request.POST)
         if form.is_valid():
@@ -240,7 +289,7 @@ def create_response(request, advertisement_id):
             user = request.user
             response = Response(user=user, advertisement=advertisement, content=text)
             response.save()
-            send_response_notification_task.delay(advertisement.id, text)
+            send_response_notification_task.delay(advertisement_id, text)
             return redirect('home')
     else:
         form = ResponseForm()
@@ -275,13 +324,6 @@ def send_response_notification(advertisement, response_text):
 #         user_responses = user_responses.filter(advertisement__category=category)
 #
 #     return render(request, 'private.html', {'form': form, 'user_responses': user_responses})
-
-
-def user_responses(request):
-    form = AdvertisementForm()
-    user_responses = Response.objects.filter(user=request.user.id)
-
-    return render(request, 'private.html', {'form': form, 'user_responses': user_responses})
 
 
 def delete_response(request, response_id):
