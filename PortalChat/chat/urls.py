@@ -21,7 +21,7 @@ urlpatterns = [
     path('private/', views.user_responses, name='private'),
 
     path('advertisement_create/', views.AdvertisementCreateView.as_view(), name='advertisement_create'),
-    path('create_response/<int:advertisement_id>/', create_response, name='create_response'),
+
 
     path('accounts/create_response/<int:advertisement_id>/', create_response, name='create_response'),
     path('create_response/<int:advertisement_id>/', create_response, name='create_response'),
