@@ -130,7 +130,7 @@ class LoginUser(LoginView):
 # ДОМАШНЯЯ
 def home(request):
     all_responses = Response.objects.all()
-    all_advertisements = Advertisement.objects.all().order_by('-advertisement_id')
+    all_advertisements = Advertisement.objects.all().order_by('-id')
     admin_news = Newsletter.objects.filter(sent_date__isnull=False)
 
     paginator = Paginator(all_advertisements, 10)  # Разбиваем объявления на страницы, по 10 объявлений на страницу
@@ -281,7 +281,7 @@ def user_responses(request, advertisement_id=None):
 # СОЗДАЮ ОТКЛИК
 @login_required
 def create_response(request, advertisement_id):
-    advertisement = Advertisement.objects.get(advertisement_id=advertisement_id)
+    advertisement = Advertisement.objects.get(id=advertisement_id)
     if request.method == 'POST':
         form = ResponseForm(request.POST)
         if form.is_valid():

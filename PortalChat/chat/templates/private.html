@@ -3,6 +3,20 @@
 {% block content %}
 <h1>Отклики пользователя</h1>
 
+<!-- Отображение всех объявлений пользователя с кнопкой "Редактировать" -->
+<ul>
+    {% for advertisement in user_advertisements %}
+        <li>
+            {{ advertisement.title }} - {{ advertisement.category }}
+            <a href="{% url 'advertisement_update' pk=advertisement.pk %}">Редактировать</a>
+        </li>
+    {% empty %}
+        <li>У вас пока нет объявлений. <a href="{% url 'advertisement_create' %}">Создать объявление</a></li>
+    {% endfor %}
+</ul>
+
+<h2>Отклики пользователя</h2>
+
 <!-- Форма для фильтрации откликов -->
 <form method="GET">
     <label for="title">Фильтр по названию объявления:</label>
@@ -23,8 +37,6 @@
 <ul>
     {% for response in user_responses %}
         <li>{{ response.content }} - {{ response.advertisement.title }} - {{ response.advertisement.category }}</li>
-        <!-- Кнопка "Создать отклик" для каждого отклика -->
-        <a href="{% url 'create_response' advertisement_id=response.advertisement.id %}"><button>Создать отклик</button></a>
     {% empty %}
         <li>Нет откликов соответствующих выбранным фильтрам</li>
     {% endfor %}

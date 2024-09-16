@@ -1,3 +1,5 @@
+from django.conf import settings
+from django.conf.urls.static import static
 from django.urls import path
 
 from . import views
@@ -11,7 +13,7 @@ urlpatterns = [
     path('', LoginUser.as_view(), name='login'),
     path('login/', LoginUser.as_view(), name='login'),
     path('verify/', verify_code_view, name='verify_code'),
-    path('home', home, name='home'),
+    path('home/', home, name='home'),
 
     path('user/responses/', views.user_responses, name='user_responses'),
     path('response/delete/<int:response_id>/', views.delete_response, name='delete_response'),
@@ -28,4 +30,4 @@ urlpatterns = [
     path('response/accept/<int:response_id>/', views.accept_response, name='accept_response'),
     path('accounts/create_response/<int:response_id>/', views.accept_response, name='accept_response'),
 
-]
+] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

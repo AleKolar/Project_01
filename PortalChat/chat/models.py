@@ -21,9 +21,11 @@ class Permission(models.Model):
 
 
 class Advertisement(models.Model):
-    username = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     title = models.CharField(max_length=100)
     text = models.TextField()
+    image = models.ImageField(upload_to='images/', blank=True, null=True)
+    video = models.FileField(upload_to='videos/', blank=True, null=True)
     content = RichTextField()
     category_choices = [
         ('Tanks', 'Танки'),
@@ -38,7 +40,7 @@ class Advertisement(models.Model):
         ('Spellcasters', 'Мастера заклинаний'),
     ]
     category = models.CharField(max_length=20, choices=category_choices)
-    image = models.ImageField(upload_to='images/', blank=True, null=True)
+
 
     def __str__(self):
         return self.title
