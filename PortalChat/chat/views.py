@@ -1,21 +1,14 @@
 import logging
 import random
 import string
-from django.conf import settings
-from django.contrib.auth import authenticate
-from django.contrib.auth.decorators import permission_required, login_required
+from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.views import LoginView
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
-from django.http import HttpResponse
-from django.urls import reverse_lazy
 from django.utils import timezone
 from datetime import timedelta
 from django.shortcuts import render, redirect, get_object_or_404
-from django.views.generic import CreateView
-from moviepy import video
-
 from .filters import filter_user_responses
 from .forms import RegistrationForm, ConfirmationForm, AdvertisementForm, ResponseForm
 from django import forms
@@ -29,6 +22,9 @@ from django.urls import reverse_lazy
 from .models import Advertisement
 from PIL import Image
 from moviepy.editor import VideoFileClip
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.core.exceptions import PermissionDenied
+from django.views.generic.edit import UpdateView
 
 
 def generate_confirmation_code():
@@ -42,6 +38,7 @@ def clean_email(self):
     return email
 
 
+# ПРОВЕРКА КООДА В БД
 def confirm_code(request):
     if request.method == 'POST':
         form = ConfirmationForm(request.POST)
@@ -153,7 +150,9 @@ def home(request):
 logger = logging.getLogger(__name__)
 
 
-class AdvertisementCreateView(CreateView):
+# СОЗДАЕМ ОБЪЯВЛЕНИЕ
+
+class AdvertisementCreateView(LoginRequiredMixin, CreateView):
     model = Advertisement
     fields = ['title', 'text', 'category', 'image', 'video']
     template_name = 'advertisement_create.html'
@@ -177,7 +176,68 @@ class AdvertisementCreateView(CreateView):
                             'Leatherworkers', 'Alchemists', 'Spellcasters']
 
         if category not in valid_categories:
-            form.add_error('category', 'Выберите категорию из списка: Танки, Хилы, ДД, Торговцы, Гилдмастеры, Квестгиверы, Кузнецы, Кожевники, Зельевары, Мастера заклинаний')
+            form.add_error('category',
+                           'Выберите категорию из списка: Танки, Хилы, ДД, Торговцы, Гилдмастеры, Квестгиверы, Кузнецы, Кожевники, Зельевары, Мастера заклинаний')
+            return self.form_invalid(form)
+
+        images_path = os.path.join(settings.MEDIA_ROOT, 'images')
+        os.makedirs(images_path, exist_ok=True)
+
+        # Изменение размера изображения до 200x150 пикселей
+        if form.cleaned_data.get('image'):
+            image = form.cleaned_data.get('image')
+            image_output_path = os.path.join(images_path, image.name)
+            self.resize_image(image, image_output_path, 200, 150)
+            form.instance.image = image_output_path
+
+        videos_path = os.path.join(settings.MEDIA_ROOT, 'videos')
+        os.makedirs(videos_path, exist_ok=True)
+
+        # Изменение размера видео до ширины 640 пикселей
+        if form.cleaned_data.get('video'):
+            video = form.cleaned_data.get('video')
+            video_output_path = os.path.join(videos_path, video.name)
+            self.resize_video(video, video_output_path, 640, 480)
+            form.instance.video = video_output_path
+
+        return super().form_valid(form)
+
+    success_url = reverse_lazy('home')
+
+
+# ШАБЛОН РЕДАКТИРОВАНИЯ ОБЪЯВЛЕНИЙ
+class AdvertisementUpdateView(LoginRequiredMixin, UpdateView):
+    model = Advertisement
+    fields = ['title', 'text', 'category', 'image', 'video']
+    template_name = 'advertisement_update.html'
+
+    def dispatch(self, request, *args, **kwargs):
+        obj = self.get_object()
+        if obj.user != self.request.user:
+            raise PermissionDenied
+        return super().dispatch(request, *args, **kwargs)
+
+    @staticmethod
+    def resize_image(image, output_path, width, height):
+        img = Image.open(image)
+        img_resized = img.resize((width, height))
+        img_resized.save(output_path)
+
+    @staticmethod
+    def resize_video(video, output_path, width, height):
+        video = VideoFileClip(video.temporary_file_path())
+        video_resized = video.resize(width=width, height=height)
+        video_resized.write_videofile(output_path)
+
+    def form_valid(self, form):
+        form.instance.user_id = self.request.user.id
+        category = form.cleaned_data.get('category')
+        valid_categories = ['Tanks', 'Healers', 'DPS', 'Traders', 'Guild Masters', 'Quest Givers', 'Blacksmiths',
+                            'Leatherworkers', 'Alchemists', 'Spellcasters']
+
+        if category not in valid_categories:
+            form.add_error('category',
+                           'Выберите категорию из списка: Танки, Хилы, ДД, Торговцы, Гилдмастеры, Квестгиверы, Кузнецы, Кожевники, Зельевары, Мастера заклинаний')
             return self.form_invalid(form)
 
         images_path = os.path.join(settings.MEDIA_ROOT, 'images')
@@ -212,7 +272,10 @@ def user_responses(request, advertisement_id=None):
     user_responses = filter_user_responses(user_id, title=request.GET.get('title'),
                                            category=request.GET.get('category'), advertisement_id=advertisement_id)
 
-    return render(request, 'private.html', {'form': form, 'user_responses': user_responses})
+    user_advertisements = Advertisement.objects.filter(user_id=user_id)
+
+    return render(request, 'private.html',
+                  {'form': form, 'user_responses': user_responses, 'user_advertisements': user_advertisements})
 
 
 # СОЗДАЮ ОТКЛИК
