@@ -22,7 +22,7 @@ class Permission(models.Model):
 
 class Advertisement(models.Model):
     advertisement_id = models.AutoField(primary_key=True)
-    username = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     title = models.CharField(max_length=100)
     text = models.TextField()
     content = RichTextField()

@@ -1,6 +1,8 @@
 import logging
 import random
 import string
+
+from django.contrib.auth import authenticate
 from django.contrib.auth.decorators import permission_required, login_required
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -19,6 +21,7 @@ from django import forms
 from .tasks import send_confirmation_code, send_one_time_code_email, send_response_notification_task, \
     send_response_email
 from .models import CustomUser, Advertisement, Response, Newsletter
+from .forms import AuthForm
 
 
 def generate_confirmation_code():
@@ -30,31 +33,6 @@ def clean_email(self):
     if CustomUser.objects.filter(email=email).exists():
         raise forms.ValidationError("Такой E-mail уже существует!")
     return email
-
-
-# def login_user(request):
-#     if request.method == 'POST':
-#         form = AuthForm(request.POST)
-#         if form.is_valid():
-#             email = form.cleaned_data['email']
-#             password = form.cleaned_data['password']
-#             username = form.cleaned_data['username']
-#             code = generate_confirmation_code()
-#             request.session['confirmation_code'] = code
-#
-#             user = authenticate(request, username=username, password=password)
-#
-#             if user is not None:
-#                 send_confirmation_code.delay(user.pk)
-#
-#                 print(f'Confirmation code sent to user: {code}')
-#
-#                 return redirect('verify_code')
-#
-#     else:
-#         form = AuthForm()
-#
-#     return render(request, 'login.html', {'form': form})
 
 
 def confirm_code(request):
@@ -124,6 +102,32 @@ def login_user(request):
     return render(request, 'login.html', {'form': AuthenticationForm()})
 
 
+
+# def login_user(request):
+#     if request.method == 'POST':
+#         form = AuthForm(request.POST)
+#         if form.is_valid():
+#             email = form.cleaned_data['email']
+#             password = form.cleaned_data['password']
+#             username = form.cleaned_data['username']
+#             code = generate_confirmation_code()
+#             request.session['confirmation_code'] = code
+#
+#             user = authenticate(request, username=username, password=password)
+#
+#             if user is not None:
+#                 send_confirmation_code.delay(user.pk)
+#
+#                 print(f'Confirmation code sent to user: {code}')
+#
+#                 return redirect('verify_code')
+#
+#     else:
+#         form = AuthForm()
+#
+#     return render(request, 'login.html', {'form': form})
+
+
 # ВХОД (АВТОРИЗАЦИЯ)
 class LoginUser(LoginView):
     form_class = AuthenticationForm
@@ -172,19 +176,49 @@ def home(request):
 logger = logging.getLogger(__name__)
 
 
-class AdvertisementCreateView(LoginRequiredMixin, CreateView):
+# class AdvertisementCreateView(LoginRequiredMixin, CreateView):
+#     model = Advertisement
+#     fields = ['title', 'text', 'category', 'image']
+#     template_name = 'advertisement_create.html'
+#
+#     # success_url = reverse_lazy('home')
+#     def get_success_url(self):
+#         from django.urls import reverse
+#         return reverse('home')
+#
+#     @login_required
+#     def form_valid(self, form):
+#         form.instance.user_id = self.request.user.id
+#         category = form.cleaned_data.get('category')
+#         valid_categories = ['Tanks', 'Healers', 'DPS', 'Traders', 'Guild Masters', 'Quest Givers', 'Blacksmiths',
+#                             'Leatherworkers', 'Alchemists', 'Spellcasters']
+#
+#         if category not in valid_categories:
+#             form.add_error('category',
+#                            'Выберите категорию из списка: Танки, Хилы, ДД, Торговцы, Гилдмастеры, Квестгиверы, Кузнецы, Кожевники, Зельевары, Мастера заклинаний')
+#             logger.error('Выбранная категория не допустима: %s', category)
+#             return self.form_invalid(form)
+#
+#         return super().form_valid(form)
+#
+#     def post(self, request, *args, **kwargs):
+#         form = self.get_form()
+#         if form.is_valid():
+#             logger.info('Данные формы действительны. Попытка сохранения в базу данных.')
+#             return self.form_valid(form)
+#         else:
+#             logger.error('Данные формы недействительны.')
+#             return self.form_invalid(form)
+
+
+
+class AdvertisementCreateView(CreateView):
     model = Advertisement
     fields = ['title', 'text', 'category', 'image']
     template_name = 'advertisement_create.html'
 
-    # success_url = reverse_lazy('home')
-    def get_success_url(self):
-        from django.urls import reverse
-        return reverse('home')
-
-    @login_required
     def form_valid(self, form):
-        form.instance.username_id = self.request.user.id  # Заполнение username_id текущего пользователя
+        form.instance.user_id = self.request.user.id
         category = form.cleaned_data.get('category')
         valid_categories = ['Tanks', 'Healers', 'DPS', 'Traders', 'Guild Masters', 'Quest Givers', 'Blacksmiths',
                             'Leatherworkers', 'Alchemists', 'Spellcasters']
@@ -192,19 +226,14 @@ class AdvertisementCreateView(LoginRequiredMixin, CreateView):
         if category not in valid_categories:
             form.add_error('category',
                            'Выберите категорию из списка: Танки, Хилы, ДД, Торговцы, Гилдмастеры, Квестгиверы, Кузнецы, Кожевники, Зельевары, Мастера заклинаний')
-            logger.error('Выбранная категория не допустима: %s', category)
             return self.form_invalid(form)
 
         return super().form_valid(form)
 
-    def post(self, request, *args, **kwargs):
-        form = self.get_form()
-        if form.is_valid():
-            logger.info('Данные формы действительны. Попытка сохранения в базу данных.')
-            return self.form_valid(form)
-        else:
-            logger.error('Данные формы недействительны.')
-            return self.form_invalid(form)
+    success_url = reverse_lazy('home')
+
+
+
 
 
 # ДЛЯ ФИЛЬТРАЦИИ ОТКЛИКОВ ПОЛЬЗ-ЛЯ

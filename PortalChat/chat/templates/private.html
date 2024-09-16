@@ -23,8 +23,6 @@
 <ul>
     {% for response in user_responses %}
         <li>{{ response.content }} - {{ response.advertisement.title }} - {{ response.advertisement.category }}</li>
-        <!-- Кнопка "Создать отклик" для каждого отклика -->
-        <a href="{% url 'create_response' advertisement_id=response.advertisement.id %}"><button>Создать отклик</button></a>
     {% empty %}
         <li>Нет откликов соответствующих выбранным фильтрам</li>
     {% endfor %}

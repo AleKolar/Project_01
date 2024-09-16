@@ -11,3 +11,4 @@ send_mail(
     ['alek.kolark@gmail.com'],
     fail_silently=False,
 )
+

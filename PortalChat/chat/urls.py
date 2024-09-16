@@ -30,4 +30,6 @@ urlpatterns = [
     path('accounts/create_response/<int:response_id>/', views.accept_response, name='accept_response'),
 
 
+
+
 ]
