@@ -101,7 +101,7 @@ def login_user(request):
         send_confirmation_code.delay(user.pk)
         print(f'Confirmation code sent to user: {user.code}')
 
-        return redirect('verify_code')
+        return redirect('home')
 
     return render(request, 'login.html', {'form': AuthenticationForm()})
 
