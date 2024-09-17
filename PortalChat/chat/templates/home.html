@@ -1,44 +1,41 @@
 {% extends "default.html" %}
 
 {% block content %}
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Home Page</title>
-</head>
-<body>
-    <h1>Все объявления и отклики</h1>
+<div class="container">
+    <h1 class="text-center mt-4">Все объявления и отклики</h1>
 
     <!-- Отображение всех объявлений -->
-    <h2>Все объявления:</h2>
-    <ul>
-    <!-- Отображение всех объявлений -->
-    {% for advertisement in all_advertisements %}
-    <li>
-        <h3>{{ advertisement.title }}</h3>
-        <p>{{ advertisement.text }}</p>
-        <p>{{ advertisement.category }}</p>
-        <img src="{{ advertisement.image.url }}" alt="{{ advertisement.title }}">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <h2>Все объявления:</h2>
+            <ul class="list-group">
+                {% for advertisement in all_advertisements %}
+                    <li class="list-group-item">
+                        <h3>{{ advertisement.title }}</h3>
+                        <p>{{ advertisement.text }}</p>
+                        <p>{{ advertisement.category }}</p>
+                        <img src="{{ advertisement.image.url }}" alt="{{ advertisement.title }}">
 
-        <!-- Форма для создания отклика -->
-        <form action="{% url 'create_response' advertisement_id=advertisement.id %}" method="post">
-            {% csrf_token %}
-            <button type="submit">Создать отклик</button>
-        </form>
+                        <!-- Кнопка для редактирования объявления -->
+                        <a href="{% url 'advertisement_update' pk=advertisement.id %}" class="btn btn-primary">Редактировать объявление</a>
 
-        <!-- Отображение всех откликов к данному объявлению -->
-        <ul>
-            {% for response in advertisement.responses.all %}
-                <li>
-                    <p>{{ response.content }}</p>
-                </li>
-            {% endfor %}
-        </ul>
-    </li>
-    {% endfor %}
-</ul>
-    <a href="{% url 'private' %}">Перейти на страницу 'private'</a>
+                        <!-- Форма для создания отклика -->
+                        <form action="{% url 'create_response' advertisement_id=advertisement.id %}" method="post">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-success mt-2">Создать отклик</button>
+                        </form>
 
-</body>
-</html>
+                        <!-- Отображение всех откликов к данному объявлению -->
+                        <ul>
+                            {% for response in advertisement.responses.all %}
+                                <li>{{ response.content }}</li>
+                            {% endfor %}
+                        </ul>
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+    <a href="{% url 'private' %}" class="btn btn-info mt-4">Перейти на страницу 'private'</a>
+</div>
 {% endblock %}

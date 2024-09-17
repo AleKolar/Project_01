@@ -50,6 +50,7 @@ class Response(models.Model):
     advertisement = models.ForeignKey(Advertisement, on_delete=models.CASCADE, related_name='responses')
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     content = models.TextField()
+    # accepted = models.BooleanField(default=False)
 
     def __str__(self):
         return f'Response to {self.advertisement.title}'

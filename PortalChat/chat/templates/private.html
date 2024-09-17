@@ -36,7 +36,17 @@
 <!-- Отображение отфильтрованных откликов пользователя -->
 <ul>
     {% for response in user_responses %}
-        <li>{{ response.content }} - {{ response.advertisement.title }} - {{ response.advertisement.category }}</li>
+        <li>
+            {{ response.content }} - {{ response.advertisement.title }} - {{ response.advertisement.category }}
+            <form action="{% url 'accept_response' response_id=response.id %}" method="post">
+                {% csrf_token %}
+                <button type="submit">Принять отзыв</button>
+            </form>
+            <form action="{% url 'delete_response' response_id=response.id %}" method="post">
+                {% csrf_token %}
+                <button type="submit">Удалить отзыв</button>
+            </form>
+        </li>
     {% empty %}
         <li>Нет откликов соответствующих выбранным фильтрам</li>
     {% endfor %}

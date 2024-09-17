@@ -20,11 +20,15 @@ def send_confirmation_code(user_id):
 
 
 @shared_task
-def send_response_notification_task(advertisement_id, response_text):
-    advertisement = Advertisement.objects.get(id=advertisement_id)
+def send_response_notification_task(response_id, text):
+    response = Response.objects.get(id=response_id)
+    advertisement = response.advertisement
+    user = response.user
+
     subject = 'Your Response Has Been Accepted'
-    message = f'Hello {advertisement.username},\n\nYour response to the advertisement "{advertisement.title}" has been accepted.\n\nResponse: {response_text}\n\nBest regards, Your Website Team'
-    send_mail(subject, message, 'your@email.com', [advertisement.username.email])
+    message = f'Hello {user.username},\n\nYour response to the advertisement "{advertisement.title}" has been accepted.\n\nResponse: {text}\n\nBest regards, Your Website Team'
+
+    send_mail(subject, message, 'gefest-173@yandex.ru', [user.email])
 
 
 # ОТПРАВЛЯЮ УВЕДОМЛЕНИЕ

@@ -6,6 +6,7 @@ from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.views import LoginView
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
+from django.http import HttpResponse, Http404
 from django.utils import timezone
 from datetime import timedelta
 from django.shortcuts import render, redirect, get_object_or_404
@@ -270,7 +271,7 @@ def user_responses(request, advertisement_id=None):
     form = AdvertisementForm()
     user_id = request.user.id
     user_responses = filter_user_responses(user_id, title=request.GET.get('title'),
-                                           category=request.GET.get('category'), advertisement_id=advertisement_id)
+                                           category=request.GET.get('category'), advertisement_id=advertisement_id).order_by('-id')
 
     user_advertisements = Advertisement.objects.filter(user_id=user_id)
 
@@ -281,7 +282,7 @@ def user_responses(request, advertisement_id=None):
 # СОЗДАЮ ОТКЛИК
 @login_required
 def create_response(request, advertisement_id):
-    advertisement = Advertisement.objects.get(id=advertisement_id)
+    advertisement = get_object_or_404(Advertisement, id=advertisement_id)
     if request.method == 'POST':
         form = ResponseForm(request.POST)
         if form.is_valid():
@@ -299,8 +300,8 @@ def create_response(request, advertisement_id):
 
 # ОТПРАВКА УВЕДОМЛЕНИЙ
 
-def send_response_notification(advertisement, response_text):
-    send_response_email(advertisement, response_text)
+# # def send_response_notification(advertisement, response_text):
+#     # send_response_email(advertisement, response_text)
 
 
 # ДЛЯ ПРИВАТНОЙ СИРАНИЦЫ, ГДЕ ОТКЛИКИ СОЗДАННЫЕ ПОЛЬЗОВАТЕЛЕМ
@@ -335,11 +336,13 @@ def delete_response(request, response_id):
 def accept_response(request, response_id):
     response = get_object_or_404(Response, id=response_id)
 
-    # Здесь доп. логика, что-то , ещё, нужно/можно
+    # Установите статус принятия отзыва
+    #response.accepted = True
     response.published = True
     response.save()
 
-    # Отправка уведомления user, оставившему отклик
-    send_response_notification_task.delay(response.advertisement.id, response.text)
+    # Добавьте отзыв к соответствующему объявлению для публикации на "home"
+    advertisement = response.advertisement
+    advertisement.responses.add(response)
 
-    return redirect('private')
+    return redirect('home')
