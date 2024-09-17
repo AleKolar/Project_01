@@ -3,7 +3,8 @@ from django.conf.urls.static import static
 from django.urls import path
 
 from . import views
-from .views import registration_view, verify_code_view, home, LoginUser, login_user, AdvertisementCreateView
+from .views import registration_view, verify_code_view, home, LoginUser, login_user, AdvertisementCreateView, \
+    AdvertisementUpdateView
 
 urlpatterns = [
     path('signup/', registration_view, name='registration'),
@@ -29,5 +30,7 @@ urlpatterns = [
 
     path('response/accept/<int:response_id>/', views.accept_response, name='accept_response'),
     path('accounts/create_response/<int:response_id>/', views.accept_response, name='accept_response'),
+
+    path('advertisement/update/<int:pk>/', AdvertisementUpdateView.as_view(), name='advertisement_update'),
 
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -8,7 +8,7 @@
     {% for advertisement in user_advertisements %}
         <li>
             {{ advertisement.title }} - {{ advertisement.category }}
-            <a href="{% url 'advertisement_update' pk=advertisement.pk %}">Редактировать</a>
+            <a href="{% url 'advertisement_update' pk=advertisement.id %}">Редактировать</a>
         </li>
     {% empty %}
         <li>У вас пока нет объявлений. <a href="{% url 'advertisement_create' %}">Создать объявление</a></li>
@@ -46,3 +46,4 @@
 <a href="{% url 'advertisement_create' %}" class="btn btn-primary">Создать объявление</a>
 
 {% endblock %}
+
