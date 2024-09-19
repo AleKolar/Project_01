@@ -15,7 +15,7 @@ from .filter import filter_user_responses
 from .forms import RegistrationForm, ConfirmationForm, AdvertisementForm, ResponseForm
 from django import forms
 from .tasks import send_confirmation_code, send_one_time_code_email, send_response_notification_task, \
-    send_response_email
+    send_response_email, send_accept_response_task
 from .models import CustomUser, Advertisement, Response, Newsletter
 import os
 from django.conf import settings
@@ -334,5 +334,9 @@ def accept_response(request, response_id):
         response.accepted = True
         response.visible_to_all = True
         response.save()
+
+        # Отправка уведомления пользователю, оставившему отклик
+        notification_message = "Ваш отклик был принят!"
+        send_accept_response_task.delay(notification_message, response.content)
 
     return redirect('home')
