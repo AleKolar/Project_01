@@ -162,6 +162,9 @@ class AdvertisementCreateView(LoginRequiredMixin, CreateView):
     fields = ['title', 'text', 'category', 'image', 'video']
     template_name = 'advertisement_create.html'
 
+    def dispatch(self, request, *args, **kwargs):
+        return super().dispatch(request, *args, **kwargs)
+
     @staticmethod
     def resize_image(image, output_path, width, height):
         img = Image.open(image)
@@ -184,26 +187,6 @@ class AdvertisementCreateView(LoginRequiredMixin, CreateView):
             form.add_error('category',
                            'Выберите категорию из списка: Танки, Хилы, ДД, Торговцы, Гилдмастеры, Квестгиверы, Кузнецы, Кожевники, Зельевары, Мастера заклинаний')
             return self.form_invalid(form)
-
-        images_path = os.path.join(settings.MEDIA_ROOT, 'images')
-        os.makedirs(images_path, exist_ok=True)
-
-        # Изменение размера изображения до 200x150 пикселей
-        if form.cleaned_data.get('image'):
-            image = form.cleaned_data.get('image')
-            image_output_path = os.path.join(images_path, image.name)
-            self.resize_image(image, image_output_path, 200, 150)
-            form.instance.image = image_output_path
-
-        videos_path = os.path.join(settings.MEDIA_ROOT, 'videos')
-        os.makedirs(videos_path, exist_ok=True)
-
-        # Изменение размера видео до ширины 640 пикселей
-        if form.cleaned_data.get('video'):
-            video = form.cleaned_data.get('video')
-            video_output_path = os.path.join(videos_path, video.name)
-            self.resize_video(video, video_output_path, 640, 480)
-            form.instance.video = video_output_path
 
         return super().form_valid(form)
 
@@ -287,8 +270,10 @@ def user_responses(request, advertisement_id=None):
 @login_required
 def create_response(request, advertisement_id):
     advertisement = get_object_or_404(Advertisement, id=advertisement_id)
+
     if request.method == 'POST':
         form = ResponseForm(request.POST)
+
         if form.is_valid():
             text = form.cleaned_data['content']
             user = request.user
@@ -342,10 +327,12 @@ def delete_response(request, response_id):
     return redirect('private')
 
 
-
 def accept_response(request, response_id):
     response = Response.objects.get(id=response_id)
-    response.accepted = True
-    response.visible_to_all = True
-    response.save()
+
+    if request.user == response.advertisement.user:
+        response.accepted = True
+        response.visible_to_all = True
+        response.save()
+
     return redirect('home')
