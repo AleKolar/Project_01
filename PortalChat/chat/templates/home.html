@@ -14,7 +14,30 @@
                         <h3>{{ advertisement.title }}</h3>
                         <p>{{ advertisement.text }}</p>
                         <p>{{ advertisement.category }}</p>
-                        <img src="{{ advertisement.image.url }}" alt="{{ advertisement.title }}">
+
+                        {% if advertisement.image and advertisement.video %}
+                            <img src="{{ advertisement.image.url }}" alt="{{ advertisement.title }}">
+
+                            <video controls>
+                                <source src="{{ advertisement.video.url }}" type="video/mp4">
+                                Your browser does not support the video tag.
+                            </video>
+
+                            {% if advertisement.description %}
+                                <p>{{ advertisement.description }}</p>
+                            {% endif %}
+                        {% elif advertisement.video %}
+                            <video controls>
+                                <source src="{{ advertisement.video.url }}" type="video/mp4">
+                                Your browser does not support the video tag.
+                            </video>
+
+                            {% if advertisement.description %}
+                                <p>{{ advertisement.description }}</p>
+                            {% endif %}
+                        {% elif advertisement.image %}
+                            <img src="{{ advertisement.image.url }}" alt="{{ advertisement.title }}">
+                        {% endif %}
 
                         <!-- Кнопка для редактирования объявления -->
                         <a href="{% url 'advertisement_update' pk=advertisement.id %}" class="btn btn-primary">Редактировать объявление</a>
