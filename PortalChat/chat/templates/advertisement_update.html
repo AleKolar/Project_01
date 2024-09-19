@@ -8,11 +8,14 @@
 </head>
 <body>
     <h1>Edit Advertisement</h1>
-    <form method="post">
-        {% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit">Save Changes</button>
-    </form>
+    <form method="POST" enctype="multipart/form-data">
+    {% csrf_token %}
+    {{ form.as_p }}
+
+    <button type="submit" name="action" value="save_image">Сохранить изображение</button>
+
+    <button type="submit" name="action" value="save_video">Сохранить видео</button>
+</form>
 </body>
 </html>
 {% endblock %}

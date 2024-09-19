@@ -248,22 +248,22 @@ class AdvertisementUpdateView(LoginRequiredMixin, UpdateView):
         images_path = os.path.join(settings.MEDIA_ROOT, 'images')
         os.makedirs(images_path, exist_ok=True)
 
-        # Изменение размера изображения до 200x150 пикселей
-        if form.cleaned_data.get('image'):
-            image = form.cleaned_data.get('image')
-            image_output_path = os.path.join(images_path, image.name)
-            self.resize_image(image, image_output_path, 200, 150)
-            form.instance.image = image_output_path
-
         videos_path = os.path.join(settings.MEDIA_ROOT, 'videos')
         os.makedirs(videos_path, exist_ok=True)
 
-        # Изменение размера видео до ширины 640 пикселей
-        if form.cleaned_data.get('video'):
-            video = form.cleaned_data.get('video')
-            video_output_path = os.path.join(videos_path, video.name)
-            self.resize_video(video, video_output_path, 640, 480)
-            form.instance.video = video_output_path
+        # Замена изображения, если выбрано новое изображение
+        if self.request.FILES.get('new_image'):
+            new_image = self.request.FILES.get('new_image')
+            new_image_output_path = os.path.join(images_path, new_image.name)
+            self.resize_image(new_image, new_image_output_path, 200, 150)
+            form.instance.image = new_image_output_path
+
+        # Замена видео, если выбрано новое видео
+        if self.request.FILES.get('new_video'):
+            new_video = self.request.FILES.get('new_video')
+            new_video_output_path = os.path.join(videos_path, new_video.name)
+            self.resize_video(new_video, new_video_output_path, 640, 480)
+            form.instance.video = new_video_output_path
 
         return super().form_valid(form)
 
