@@ -52,6 +52,17 @@
     {% endfor %}
 </ul>
 
+<!-- Отображение всех откликов -->
+<ul>
+    {% for response in all_responses %}
+        <li>
+            {{ response.content }} - {{ response.advertisement.title }} - {{ response.advertisement.category }}
+        </li>
+    {% empty %}
+        <li>Нет откликов для отображения</li>
+    {% endfor %}
+</ul>
+
 <!-- Кнопка для создания объявления -->
 <a href="{% url 'advertisement_create' %}" class="btn btn-primary">Создать объявление</a>
 

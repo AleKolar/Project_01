@@ -5,6 +5,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.views import LoginView
+from django.core.cache import cache
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django.http import HttpResponse, Http404
 from django.utils import timezone
@@ -90,7 +91,8 @@ def verify_code_view(request):
         user = CustomUser.objects.get(code=code)
         user.is_verified = True
         user.save()
-        return render(request, 'home.html')
+        return redirect('home')
+
     return render(request, 'verify_code.html')
 
 
@@ -129,12 +131,14 @@ class LoginUser(LoginView):
 
 
 # ДОМАШНЯЯ
+from django.db.models import Q
+
 def home(request):
-    all_responses = Response.objects.all()
+    all_responses = Response.objects.filter(accepted=True, visible_to_all=True)
     all_advertisements = Advertisement.objects.all().order_by('-id')
     admin_news = Newsletter.objects.filter(sent_date__isnull=False)
 
-    paginator = Paginator(all_advertisements, 10)  # Разбиваем объявления на страницы, по 10 объявлений на страницу
+    paginator = Paginator(all_advertisements, 10)
     page = request.GET.get('page')
 
     try:
@@ -290,6 +294,8 @@ def create_response(request, advertisement_id):
             user = request.user
             response = Response(user=user, advertisement=advertisement, content=text)
             response.save()
+            response.advertisement.responses.add(response)
+            response.save()
             send_response_notification_task.delay(advertisement_id, text)
             return redirect('home')
     else:
@@ -330,19 +336,16 @@ def create_response(request, advertisement_id):
 def delete_response(request, response_id):
     response = get_object_or_404(Response, id=response_id)
     response.delete()
+
+    cache.clear()  # Очистка кэша
+
     return redirect('private')
 
 
+
 def accept_response(request, response_id):
-    response = get_object_or_404(Response, id=response_id)
-
-    # Установите статус принятия отзыва
-    #response.accepted = True
-    response.published = True
+    response = Response.objects.get(id=response_id)
+    response.accepted = True
+    response.visible_to_all = True
     response.save()
-
-    # Добавьте отзыв к соответствующему объявлению для публикации на "home"
-    advertisement = response.advertisement
-    advertisement.responses.add(response)
-
     return redirect('home')

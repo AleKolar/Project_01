@@ -28,7 +28,9 @@
                         <!-- Отображение всех откликов к данному объявлению -->
                         <ul>
                             {% for response in advertisement.responses.all %}
-                                <li>{{ response.content }}</li>
+                                {% if response.visible_to_all and response.accepted %}
+                                    <li>{{ response.content }}</li>
+                                {% endif %}
                             {% endfor %}
                         </ul>
                     </li>
