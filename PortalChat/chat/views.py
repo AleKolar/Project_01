@@ -14,7 +14,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from .filter import filter_user_responses
 from .forms import RegistrationForm, ConfirmationForm, AdvertisementForm, ResponseForm
 from django import forms
-from .tasks import send_confirmation_code, send_one_time_code_email, send_response_notification_task, \
+from .tasks import send_confirmation_code, send_one_time_code_email,\
     send_response_email, send_accept_response_task
 from .models import CustomUser, Advertisement, Response, Newsletter
 import os
@@ -257,13 +257,27 @@ class AdvertisementUpdateView(LoginRequiredMixin, UpdateView):
 def user_responses(request, advertisement_id=None):
     form = AdvertisementForm()
     user_id = request.user.id
-    user_responses = filter_user_responses(user_id, title=request.GET.get('title'),
-                                           category=request.GET.get('category'), advertisement_id=advertisement_id).order_by('-id')
-
     user_advertisements = Advertisement.objects.filter(user_id=user_id)
+
+    user_responses = Response.objects.filter(advertisement__in=user_advertisements)
+
+    title = request.GET.get('title')
+    category = request.GET.get('category')
+
+    if title:
+        user_responses = user_responses.filter(advertisement__title__icontains=title)
+
+    if category:
+        user_responses = user_responses.filter(advertisement__category=category)
+
+    if advertisement_id:
+        user_responses = user_responses.filter(advertisement_id=advertisement_id)
+
+    user_responses = user_responses.order_by('-id')
 
     return render(request, 'private.html',
                   {'form': form, 'user_responses': user_responses, 'user_advertisements': user_advertisements})
+
 
 
 # СОЗДАЮ ОТКЛИК
@@ -281,7 +295,7 @@ def create_response(request, advertisement_id):
             response.save()
             response.advertisement.responses.add(response)
             response.save()
-            send_response_notification_task.delay(advertisement_id, text)
+            send_response_email.delay(advertisement_id, text)
             return redirect('home')
     else:
         form = ResponseForm()

@@ -48,18 +48,7 @@
             </form>
         </li>
     {% empty %}
-        <li>Нет откликов соответствующих выбранным фильтрам</li>
-    {% endfor %}
-</ul>
-
-<!-- Отображение всех откликов -->
-<ul>
-    {% for response in all_responses %}
-        <li>
-            {{ response.content }} - {{ response.advertisement.title }} - {{ response.advertisement.category }}
-        </li>
-    {% empty %}
-        <li>Нет откликов для отображения</li>
+        <li>Нет откликов на ваши объявления</li>
     {% endfor %}
 </ul>
 
@@ -67,4 +56,3 @@
 <a href="{% url 'advertisement_create' %}" class="btn btn-primary">Создать объявление</a>
 
 {% endblock %}
-
