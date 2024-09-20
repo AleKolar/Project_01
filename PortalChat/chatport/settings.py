@@ -128,9 +128,7 @@ EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.yandex.ru'
 EMAIL_PORT = 465
 EMAIL_HOST_USER = 'gefest-173'
-# EMAIL_HOST_PASSWORD = 'Mn14071979'
-# EMAIL_HOST_PASSWORD = 'txguxpjqlwvickvv'
-EMAIL_HOST_PASSWORD = 'chat'
+EMAIL_HOST_PASSWORD = 'jpawdkndskuzsjsr'
 EMAIL_USE_SSL = True
 DEFAULT_FROM_EMAIL = 'gefest-173@yandex.ru'
 

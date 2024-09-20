@@ -4,6 +4,7 @@ import string
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.models import User
 from django.contrib.auth.views import LoginView
 from django.core.cache import cache
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
@@ -12,10 +13,10 @@ from django.utils import timezone
 from datetime import timedelta
 from django.shortcuts import render, redirect, get_object_or_404
 from .filter import filter_user_responses
-from .forms import RegistrationForm, ConfirmationForm, AdvertisementForm, ResponseForm
+from .forms import RegistrationForm, ConfirmationForm, AdvertisementForm, ResponseForm, NewsletterAllUsersForm
 from django import forms
-from .tasks import send_confirmation_code, send_one_time_code_email,\
-    send_response_email, send_accept_response_task
+from .tasks import send_confirmation_code, send_one_time_code_email, \
+    send_response_email, send_accept_response_task, send_newsletter_task
 from .models import CustomUser, Advertisement, Response, Newsletter
 import os
 from django.conf import settings
@@ -356,3 +357,17 @@ def accept_response(request, response_id):
         send_accept_response_task.delay(response_id, notification_message)
 
     return redirect('home')
+
+
+
+# СОЗДАЕМ НОВОСТЬ
+class NewsletterCreateView(CreateView):
+    model = Newsletter
+    fields = ['title', 'content']
+    template_name = 'newsletter_create_form.html'
+    def form_valid(self, form):
+        newsletter = form.save()
+        send_newsletter_task.delay(newsletter.id)
+        return super().form_valid(form)
+    def get_success_url(self):
+        return reverse_lazy('home')

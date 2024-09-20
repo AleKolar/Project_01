@@ -4,7 +4,7 @@ from django.core.mail import send_mail
 from django.conf import settings
 from django.shortcuts import redirect
 
-from .models import CustomUser, Advertisement, Response
+from .models import CustomUser, Advertisement, Response, Newsletter
 
 
 @shared_task
@@ -26,7 +26,7 @@ def send_accept_response_task(response_id, text):
     advertisement = response.advertisement
     user_id = response.user_id
 
-    user = User.objects.get(id=user_id)
+    user = CustomUser.objects.get(id=user_id)
 
     subject = 'Ваш Отклик принят'
     message = f'Hello {user.username},\n\nYour response to the advertisement "{advertisement.title}" has been accepted.\n\nResponse: {text}\n\nBest regards, Your Website Team'
@@ -44,7 +44,14 @@ def send_response_email(advertisement_id, text):
     send_mail(subject, message, 'qefest-173@yandex.ru', [advertisement.user.email])
 
 
+@shared_task
+def send_newsletter_task(newsletter_id):
+    newsletter = Newsletter.objects.get(pk=newsletter_id)
+    recipients = newsletter.recipients.all()
+    subject = newsletter.title
+    message = newsletter.content
+    recipient_emails = recipients.values_list('email', flat=True)
 
-
+    send_mail(subject, message, 'admin@example.com', recipient_emails)
 
 

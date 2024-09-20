@@ -48,3 +48,8 @@ class NewsletterForm(forms.ModelForm):
 
 class ResponseForm(forms.Form):
     content = forms.CharField(label='Текст отклика', widget=forms.Textarea)
+
+
+class NewsletterAllUsersForm(forms.Form):
+    title = forms.CharField(max_length=100)
+    content = forms.CharField(widget=forms.Textarea)
