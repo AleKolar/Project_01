@@ -351,6 +351,6 @@ def accept_response(request, response_id):
 
         # Отправка уведомления пользователю, оставившему отклик
         notification_message = "Ваш отклик был принят!"
-        send_accept_response_task.delay(notification_message, response.content)
+        send_accept_response_task.delay(response_id, notification_message)
 
     return redirect('home')

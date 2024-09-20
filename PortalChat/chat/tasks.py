@@ -23,7 +23,7 @@ def send_confirmation_code(user_id):
 @shared_task
 def send_accept_response_task(response_id, text):
     response = Response.objects.get(id=response_id)
-    advertisement = response.advertisements_id
+    advertisement = response.advertisement
     user_id = response.user_id
 
     user = User.objects.get(id=user_id)
@@ -36,9 +36,11 @@ def send_accept_response_task(response_id, text):
 
 # ОТПРАВЛЯЮ УВЕДОМЛЕНИЕ
 @shared_task
-def send_response_email(advertisement, text):
+def send_response_email(advertisement_id, text):
+    advertisement = Advertisement.objects.get(id=advertisement_id)
+
     subject = 'ОПОВЕЩАЮ ВЫ ПОЛУЧИЛИ НОВЫЙ ОТКЛИК'
-    message = f'{advertisement.username},\n\nОПОВЕЩАЮ ВЫ ПОЛУЧИЛИ НОВЫЙ ОТКЛИК "{advertisement.title}".\n\nResponse: {text}\n\nBest regards, Your Website Team'
+    message = f'{advertisement.user.username},\n\nОПОВЕЩАЮ ВЫ ПОЛУЧИЛИ НОВЫЙ ОТКЛИК "{advertisement.title}".\n\nResponse: {text}\n\nBest regards, Your Website Team'
     send_mail(subject, message, 'qefest-173@yandex.ru', [advertisement.user.email])
 
 
