@@ -70,8 +70,10 @@ def registration_view(request):
             user.set_password(form.cleaned_data['password'])
             code = generate_confirmation_code()
             user.code = code
+            expiration_time = timezone.now() + timedelta(seconds=300)
+            user.code_expiration = expiration_time
             user.save()
-            expiration_time = timezone.now() + timedelta(seconds=120)
+
             send_one_time_code_email.delay(user.pk)
 
             print(f'One-time code generated: {code}')
