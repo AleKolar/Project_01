@@ -37,7 +37,7 @@
 <ul>
     {% for response in user_responses %}
         <li>
-            {{ response.content }} - {{ response.advertisement.title }} - {{ response.advertisement.category }}
+            Категория: {{ response.advertisement.category }} - Название: {{ response.advertisement.title }} - Отклик: {{ response.content }}
             <form action="{% url 'accept_response' response_id=response.id %}" method="post">
                 {% csrf_token %}
                 <button type="submit">Принять отзыв</button>

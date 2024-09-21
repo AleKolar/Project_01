@@ -11,8 +11,6 @@ from django.http import HttpResponse, Http404
 from django.utils import timezone
 from datetime import timedelta
 from django.shortcuts import render, redirect, get_object_or_404
-from rest_framework.permissions import AllowAny
-
 from . import models
 from .forms import RegistrationForm, ConfirmationForm, AdvertisementForm, ResponseForm, \
     NewsletterForm
@@ -34,7 +32,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from .models import Newsletter
 from .serializers import NewsletterSerializer
-
+from .models import Response
 
 def generate_confirmation_code():
     return ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
