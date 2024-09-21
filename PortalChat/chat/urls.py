@@ -1,11 +1,15 @@
 from django.conf import settings
 from django.conf.urls.static import static
-from django.urls import path
-from django.views.generic import RedirectView
+from rest_framework.routers import DefaultRouter
 
 from . import views
 from .views import registration_view, home, LoginUser, login_user, AdvertisementCreateView, \
-    AdvertisementUpdateView, verify_code_view, NewsletterCreateView, not_admin_view
+    AdvertisementUpdateView, verify_code_view, NewsletterCreateView, NewsletterCreateAPIView
+from django.urls import path
+
+router = DefaultRouter()
+router.register(r'your-endpoint', NewsletterCreateView, basename='your-unique-basename')
+
 
 urlpatterns = [
     path('signup/', registration_view, name='registration'),
@@ -38,8 +42,9 @@ urlpatterns = [
 
     path('advertisement/update/<int:pk>/', AdvertisementUpdateView.as_view(), name='advertisement_update'),
 
-    path('createnews/', NewsletterCreateView.as_view(), name='newsletter_create_form'),
+    path('create/', NewsletterCreateAPIView.as_view(), name='create_newsletter_api'),
+    path('createform/', NewsletterCreateView.as_view(), name='create_newsletter_form'),
 
-    path('not_admin/', not_admin_view, name='not_admin'),
 
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+

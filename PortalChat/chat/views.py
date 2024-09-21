@@ -4,7 +4,6 @@ import string
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
-from django.contrib.auth.models import User
 from django.contrib.auth.views import LoginView
 from django.core.cache import cache
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
@@ -12,22 +11,29 @@ from django.http import HttpResponse, Http404
 from django.utils import timezone
 from datetime import timedelta
 from django.shortcuts import render, redirect, get_object_or_404
-from .filter import filter_user_responses
-from .forms import RegistrationForm, ConfirmationForm, AdvertisementForm, ResponseForm, NewsletterAllUsersForm
+from rest_framework.permissions import AllowAny
+
+from . import models
+from .forms import RegistrationForm, ConfirmationForm, AdvertisementForm, ResponseForm, \
+    NewsletterForm
 from django import forms
-from .tasks import send_confirmation_code, send_one_time_code_email, \
-    send_response_email, send_accept_response_task, send_newsletter_task
+from .tasks import send_one_time_code_email, \
+    send_response_email, send_accept_response_task, send_newsletter_task, send_confirmation_code
 from .models import CustomUser, Advertisement, Response, Newsletter
 import os
 from django.conf import settings
 from django.views.generic.edit import CreateView
-from django.urls import reverse_lazy
+from django.urls import reverse_lazy, reverse
 from .models import Advertisement
 from PIL import Image
 from moviepy.editor import VideoFileClip
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.core.exceptions import PermissionDenied
 from django.views.generic.edit import UpdateView
+from rest_framework import status
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from .models import Newsletter
+from .serializers import NewsletterSerializer
 
 
 def generate_confirmation_code():
@@ -136,8 +142,9 @@ class LoginUser(LoginView):
 # ДОМАШНЯЯ
 from django.db.models import Q
 
+
 def home(request):
-    all_responses = Response.objects.filter(accepted=True, visible_to_all=True)
+    all_responses = models.Response.objects.filter(accepted=True, visible_to_all=True)
     all_advertisements = Advertisement.objects.all().order_by('-id')
     admin_news = Newsletter.objects.filter(sent_date__isnull=False)
 
@@ -205,7 +212,7 @@ class AdvertisementUpdateView(LoginRequiredMixin, UpdateView):
     def dispatch(self, request, *args, **kwargs):
         obj = self.get_object()
         if obj.user != self.request.user:
-            raise PermissionDenied
+            return HttpResponse("Вы не являетесь автором этого объявления", status=403)
         return super().dispatch(request, *args, **kwargs)
 
     @staticmethod
@@ -262,7 +269,7 @@ def user_responses(request, advertisement_id=None):
     user_id = request.user.id
     user_advertisements = Advertisement.objects.filter(user_id=user_id)
 
-    user_responses = Response.objects.filter(advertisement__in=user_advertisements)
+    user_responses = models.Response.objects.filter(advertisement__in=user_advertisements)
 
     title = request.GET.get('title')
     category = request.GET.get('category')
@@ -282,7 +289,6 @@ def user_responses(request, advertisement_id=None):
                   {'form': form, 'user_responses': user_responses, 'user_advertisements': user_advertisements})
 
 
-
 # СОЗДАЮ ОТКЛИК
 @login_required
 def create_response(request, advertisement_id):
@@ -294,7 +300,7 @@ def create_response(request, advertisement_id):
         if form.is_valid():
             text = form.cleaned_data['content']
             user = request.user
-            response = Response(user=user, advertisement=advertisement, content=text)
+            response = models.Response(user=user, advertisement=advertisement, content=text)
             response.save()
             response.advertisement.responses.add(response)
             response.save()
@@ -304,35 +310,6 @@ def create_response(request, advertisement_id):
         form = ResponseForm()
 
     return render(request, 'create_response.html', {'form': form, 'advertisement_id': advertisement_id})
-
-
-# ОТПРАВКА УВЕДОМЛЕНИЙ
-
-# # def send_response_notification(advertisement, response_text):
-#     # send_response_email(advertisement, response_text)
-
-
-# ДЛЯ ПРИВАТНОЙ СИРАНИЦЫ, ГДЕ ОТКЛИКИ СОЗДАННЫЕ ПОЛЬЗОВАТЕЛЕМ
-# def user_responses(request):
-#     form = AdvertisementForm()
-#     user_responses = Response.objects.filter(user=request.user)
-#
-#     # Фильтрация по id объявления
-#     # advertisement_id = request.GET.get('advertisement_id')
-#     # if advertisement_id:
-#     #     user_responses = user_responses.filter(advertisement_id=advertisement_id)
-#
-#     # Фильтрация по названию объявления
-#     advertisement_title = request.GET.get('title')
-#     if advertisement_title:
-#         user_responses = user_responses.filter(advertisement__title=advertisement_title)
-#
-#     # Фильтрация по категории объявления
-#     category = request.GET.get('category')
-#     if category:
-#         user_responses = user_responses.filter(advertisement__category=category)
-#
-#     return render(request, 'private.html', {'form': form, 'user_responses': user_responses})
 
 
 def delete_response(request, response_id):
@@ -345,7 +322,7 @@ def delete_response(request, response_id):
 
 
 def accept_response(request, response_id):
-    response = Response.objects.get(id=response_id)
+    response = models.Response.objects.get(id=response_id)
 
     if request.user == response.advertisement.user:
         response.accepted = True
@@ -359,26 +336,17 @@ def accept_response(request, response_id):
     return redirect('home')
 
 
-
 # СОЗДАЕМ НОВОСТЬ
-
-def not_admin_view(request):
-    return render(request, 'not_admin.html')
-
-class NotAdminView(UserPassesTestMixin):
-    def test_func(self):
-        return self.request.user.is_staff
-
-    def handle_no_permission(self):
-        return render(self.request, 'not_admin.html')
 
 class NewsletterCreateView(CreateView):
     model = Newsletter
     fields = ['title', 'content']
-    template_name = 'newsletter_create_form.html'
-    def form_valid(self, form):
-        newsletter = form.save()
-        send_newsletter_task.delay(newsletter.id)
-        return super().form_valid(form)
-    def get_success_url(self):
-        return reverse_lazy('home')
+    template_name = 'rest_framework_form.html'
+    success_url = reverse_lazy('home')
+class NewsletterCreateAPIView(APIView):
+    def post(self, request):
+        serializer = NewsletterSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

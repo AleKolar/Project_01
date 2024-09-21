@@ -47,6 +47,7 @@ class Advertisement(models.Model):
 
 
 class Response(models.Model):
+    objects = models.Manager()
     advertisement = models.ForeignKey(Advertisement, on_delete=models.CASCADE, related_name='responses')
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     content = models.TextField()

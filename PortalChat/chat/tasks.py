@@ -52,6 +52,6 @@ def send_newsletter_task(newsletter_id):
     message = newsletter.content
     recipient_emails = recipients.values_list('email', flat=True)
 
-    send_mail(subject, message, 'admin@example.com', recipient_emails)
+    send_mail(subject, message, 'gefest-173@yandex.ru', recipient_emails)
 
 
