@@ -1,10 +1,11 @@
 from django.conf import settings
 from django.conf.urls.static import static
 from django.urls import path
+from django.views.generic import RedirectView
 
 from . import views
 from .views import registration_view, home, LoginUser, login_user, AdvertisementCreateView, \
-    AdvertisementUpdateView, verify_code_view, NewsletterCreateView
+    AdvertisementUpdateView, verify_code_view, NewsletterCreateView, not_admin_view
 
 urlpatterns = [
     path('signup/', registration_view, name='registration'),
@@ -37,7 +38,8 @@ urlpatterns = [
 
     path('advertisement/update/<int:pk>/', AdvertisementUpdateView.as_view(), name='advertisement_update'),
 
-    path('createnews/', NewsletterCreateView.as_view(), name='home'),
+    path('createnews/', NewsletterCreateView.as_view(), name='newsletter_create_form'),
 
+    path('not_admin/', not_admin_view, name='not_admin'),
 
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

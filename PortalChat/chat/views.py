@@ -3,7 +3,7 @@ import random
 import string
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import AuthenticationForm
-from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib.auth.models import User
 from django.contrib.auth.views import LoginView
 from django.core.cache import cache
@@ -361,6 +361,17 @@ def accept_response(request, response_id):
 
 
 # СОЗДАЕМ НОВОСТЬ
+
+def not_admin_view(request):
+    return render(request, 'not_admin.html')
+
+class NotAdminView(UserPassesTestMixin):
+    def test_func(self):
+        return self.request.user.is_staff
+
+    def handle_no_permission(self):
+        return render(self.request, 'not_admin.html')
+
 class NewsletterCreateView(CreateView):
     model = Newsletter
     fields = ['title', 'content']
