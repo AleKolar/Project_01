@@ -1,12 +1,7 @@
-{% extends "default_1.html" %}
+{% extends "default_2.html" %}
 
 {% block content %}
 <div class="container">
-    <h1 class="text-center mt-4">Все объявления и отклики</h1>
-
-    <!-- Отображение всех новостей -->
-    <h2>Последние новости:</h2>
-
 
     <!-- Отображение всех объявлений -->
     <div class="row justify-content-center">
@@ -64,7 +59,7 @@
                 {% endfor %}
             </ul>
         </div>
-        <a href="{% url 'private' %}" class="btn btn-info mt-4">Перейти на страницу 'private'</a>
+
     </div>
 </div>
 {% endblock %}

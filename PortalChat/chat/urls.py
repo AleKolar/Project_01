@@ -4,12 +4,12 @@ from rest_framework.routers import DefaultRouter
 
 from . import views
 from .views import registration_view, home, LoginUser, login_user, AdvertisementCreateView, \
-    AdvertisementUpdateView, verify_code_view, NewsletterCreateView, NewsletterCreateAPIView, display_news
+    AdvertisementUpdateView, verify_code_view,  NewsletterCreateView, display_news
 from django.urls import path
 
 router = DefaultRouter()
 router.register(r'your-endpoint', NewsletterCreateView, basename='your-unique-basename')
-
+# router.register(r'your-endpoint', NewsletterCreateAPIView, basename='your-unique-basename')
 
 urlpatterns = [
     path('signup/', registration_view, name='registration'),
@@ -42,7 +42,7 @@ urlpatterns = [
 
     path('advertisement/update/<int:pk>/', AdvertisementUpdateView.as_view(), name='advertisement_update'),
 
-    path('create/', NewsletterCreateAPIView.as_view(), name='create_newsletter_api'),
+    # path('create/', NewsletterCreateAPIView.as_view(), name='create_newsletter_api'),
     path('createform/', NewsletterCreateView.as_view(), name='create_newsletter_form'),
 
     path('news/', display_news, name='news_page'),

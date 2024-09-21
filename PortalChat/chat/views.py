@@ -175,17 +175,17 @@ class AdvertisementCreateView(LoginRequiredMixin, CreateView):
     def dispatch(self, request, *args, **kwargs):
         return super().dispatch(request, *args, **kwargs)
 
-    @staticmethod
-    def resize_image(image, output_path, width, height):
-        img = Image.open(image)
-        img_resized = img.resize((width, height))
-        img_resized.save(output_path)
-
-    @staticmethod
-    def resize_video(video, output_path, width, height):
-        video = VideoFileClip(video.temporary_file_path())
-        video_resized = video.resize(width=width, height=height)
-        video_resized.write_videofile(output_path)
+    # @staticmethod
+    # def resize_image(image, output_path, width, height):
+    #     img = Image.open(image)
+    #     img_resized = img.resize((width, height))
+    #     img_resized.save(output_path)
+    #
+    # @staticmethod
+    # def resize_video(video, output_path, width, height):
+    #     video = VideoFileClip(video.temporary_file_path())
+    #     video_resized = video.resize(width=width, height=height)
+    #     video_resized.write_videofile(output_path)
 
     def form_valid(self, form):
         form.instance.user_id = self.request.user.id
@@ -215,17 +215,17 @@ class AdvertisementUpdateView(LoginRequiredMixin, UpdateView):
             return HttpResponse("Вы не являетесь автором этого объявления", status=403)
         return super().dispatch(request, *args, **kwargs)
 
-    @staticmethod
-    def resize_image(image, output_path, width, height):
-        img = Image.open(image)
-        img_resized = img.resize((width, height))
-        img_resized.save(output_path)
-
-    @staticmethod
-    def resize_video(video, output_path, width, height):
-        video = VideoFileClip(video.temporary_file_path())
-        video_resized = video.resize(width=width, height=height)
-        video_resized.write_videofile(output_path)
+    # @staticmethod
+    # def resize_image(image, output_path, width, height):
+    #     img = Image.open(image)
+    #     img_resized = img.resize((width, height))
+    #     img_resized.save(output_path)
+    #
+    # @staticmethod
+    # def resize_video(video, output_path, width, height):
+    #     video = VideoFileClip(video.temporary_file_path())
+    #     video_resized = video.resize(width=width, height=height)
+    #     video_resized.write_videofile(output_path)
 
     def form_valid(self, form):
         form.instance.user_id = self.request.user.id
@@ -344,16 +344,23 @@ class NewsletterCreateView(CreateView):
     template_name = 'rest_framework_form.html'
     success_url = reverse_lazy('home')
 
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        newsletter_id = self.object.id
+        send_newsletter_task.delay(newsletter_id)
+        return response
 
-class NewsletterCreateAPIView(APIView):
-    def post(self, request):
-        serializer = NewsletterSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+# class NewsletterCreateAPIView(APIView):
+#     def post(self, request):
+#         serializer = NewsletterSerializer(data=request.data)
+#         if serializer.is_valid():
+#             newsletter = serializer.save()
+#             send_newsletter_task.delay(newsletter.id)
+#             return Response(serializer.data, status=status.HTTP_201_CREATED)
+#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 def display_news(request):
-    all_news = Newsletter.objects.all()  # Получаем все новости из базы данных
+    all_news = Newsletter.objects.all().order_by('-sent_date')  # Получаем все новости из базы данных
     context = {'all_news': all_news}
     return render(request, 'news_page.html', context)
