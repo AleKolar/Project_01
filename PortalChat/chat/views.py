@@ -248,7 +248,7 @@ class AdvertisementUpdateView(LoginRequiredMixin, UpdateView):
         if self.request.FILES.get('new_image'):
             new_image = self.request.FILES.get('new_image')
             new_image_output_path = os.path.join(images_path, new_image.name)
-            self.resize_image(new_image, new_image_output_path, 200, 150)
+            self.resize_image(new_image, new_image_output_path, 640, 480)
             form.instance.image = new_image_output_path
 
         # Замена видео, если выбрано новое видео
