@@ -4,7 +4,7 @@ from rest_framework.routers import DefaultRouter
 
 from . import views
 from .views import registration_view, home, LoginUser, login_user, AdvertisementCreateView, \
-    AdvertisementUpdateView, verify_code_view, NewsletterCreateView, NewsletterCreateAPIView
+    AdvertisementUpdateView, verify_code_view, NewsletterCreateView, NewsletterCreateAPIView, display_news
 from django.urls import path
 
 router = DefaultRouter()
@@ -44,6 +44,8 @@ urlpatterns = [
 
     path('create/', NewsletterCreateAPIView.as_view(), name='create_newsletter_api'),
     path('createform/', NewsletterCreateView.as_view(), name='create_newsletter_form'),
+
+    path('news/', display_news, name='news_page'),
 
 
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

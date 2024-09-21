@@ -50,6 +50,6 @@ class ResponseForm(forms.Form):
     content = forms.CharField(label='Текст отклика', widget=forms.Textarea)
 
 
-class NewsletterForm(forms.Form):
+class NewsForm(forms.Form):
     title = forms.CharField(label='Title', max_length=100)
     content = forms.CharField(label='Content', widget=forms.Textarea)

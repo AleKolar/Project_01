@@ -343,6 +343,8 @@ class NewsletterCreateView(CreateView):
     fields = ['title', 'content']
     template_name = 'rest_framework_form.html'
     success_url = reverse_lazy('home')
+
+
 class NewsletterCreateAPIView(APIView):
     def post(self, request):
         serializer = NewsletterSerializer(data=request.data)
@@ -350,3 +352,8 @@ class NewsletterCreateAPIView(APIView):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+def display_news(request):
+    all_news = Newsletter.objects.all()  # Получаем все новости из базы данных
+    context = {'all_news': all_news}
+    return render(request, 'news_page.html', context)
