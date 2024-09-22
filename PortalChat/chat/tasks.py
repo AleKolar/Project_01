@@ -43,7 +43,7 @@ def send_response_email(advertisement_id, text):
 
     subject = 'ОПОВЕЩАЮ ВЫ ПОЛУЧИЛИ НОВЫЙ ОТКЛИК'
     message = f'{advertisement.user.username},\n\nОПОВЕЩАЮ ВЫ ПОЛУЧИЛИ НОВЫЙ ОТКЛИК "{advertisement.title}".\n\nResponse: {text}\n\nBest regards, Your Website Team'
-    send_mail(subject, message, 'qefest-173@yandex.ru', [user_email])
+    send_mail(subject, message, 'gefest-173@yandex.ru', [user_email])
 
 
 @shared_task
