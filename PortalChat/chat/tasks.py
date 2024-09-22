@@ -1,10 +1,10 @@
 from celery import shared_task
-from django.contrib.auth.models import User
 from django.core.mail import send_mail
 from django.conf import settings
-from django.shortcuts import redirect
+
 
 from .models import CustomUser, Advertisement, Response, Newsletter
+
 
 
 @shared_task
@@ -45,15 +45,16 @@ def send_response_email(advertisement_id, text):
     message = f'{advertisement.user.username},\n\nОПОВЕЩАЮ ВЫ ПОЛУЧИЛИ НОВЫЙ ОТКЛИК "{advertisement.title}".\n\nResponse: {text}\n\nBest regards, Your Website Team'
     send_mail(subject, message, 'gefest-173@yandex.ru', [user_email])
 
-
+# НОВОСТНАЯ РАССЫЛКА РЕГ. ПОЛЬЗЛВАТЕЛЯМ_И НОВОСТИ НА 'home'
 @shared_task
 def send_newsletter_task(newsletter_id):
     newsletter = Newsletter.objects.get(pk=newsletter_id)
-    recipients = newsletter.recipients.all()
     subject = newsletter.title
     message = newsletter.content
+
+    recipients = CustomUser.objects.all()
     recipient_emails = recipients.values_list('email', flat=True)
 
-    send_mail(subject, message, 'gefest-173@yandex.ru', recipient_emails)
-
+    for email in recipient_emails:
+        send_mail(subject, message, 'gefest-173@yandex.ru', [email])
 

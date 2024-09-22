@@ -1,38 +1,36 @@
 import logging
+import os
 import random
 import string
+from django.contrib.auth import logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib.auth.views import LoginView
 from django.core.cache import cache
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
-from django.http import HttpResponse, Http404
+from django.http import HttpResponse
 from django.utils import timezone
 from datetime import timedelta
 from django.shortcuts import render, redirect, get_object_or_404
+from django.views.generic import TemplateView
 from . import models
-from .forms import RegistrationForm, ConfirmationForm, AdvertisementForm, ResponseForm, \
-    NewsletterForm
+from .forms import RegistrationForm, ConfirmationForm, AdvertisementForm, ResponseForm
+
 from django import forms
 from .tasks import send_one_time_code_email, \
     send_response_email, send_accept_response_task, send_newsletter_task, send_confirmation_code
-from .models import CustomUser, Advertisement, Response, Newsletter
-import os
+from .models import CustomUser
 from django.conf import settings
 from django.views.generic.edit import CreateView
-from django.urls import reverse_lazy, reverse
+from django.urls import reverse_lazy
 from .models import Advertisement
-from PIL import Image
-from moviepy.editor import VideoFileClip
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic.edit import UpdateView
-from rest_framework import status
 from rest_framework.response import Response
-from rest_framework.views import APIView
 from .models import Newsletter
-from .serializers import NewsletterSerializer
 from .models import Response
+
 
 def generate_confirmation_code():
     return ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
@@ -345,9 +343,13 @@ class NewsletterCreateView(CreateView):
 
     def form_valid(self, form):
         response = super().form_valid(form)
-        newsletter_id = self.object.id
-        send_newsletter_task.delay(newsletter_id)
+        newsletter = form.save(commit=False)
+        newsletter.email = self.request.user.email
+        newsletter.save()
+
+        send_newsletter_task.delay(newsletter.id)
         return response
+
 
 # class NewsletterCreateAPIView(APIView):
 #     def post(self, request):
@@ -363,3 +365,11 @@ def display_news(request):
     all_news = Newsletter.objects.all().order_by('-sent_date')  # Получаем все новости из базы данных
     context = {'all_news': all_news}
     return render(request, 'news_page.html', context)
+
+
+class CustomLogoutView(TemplateView):
+    template_name = 'logout.html'
+
+    def get(self, request, *args, **kwargs):
+        logout(request)
+        return redirect('login')
