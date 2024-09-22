@@ -145,7 +145,7 @@ def home(request):
     all_responses = models.Response.objects.filter(accepted=True, visible_to_all=True)
     all_advertisements = Advertisement.objects.all().order_by('-id')
     admin_news = Newsletter.objects.filter(sent_date__isnull=False)
-
+    user = request.user
     paginator = Paginator(all_advertisements, 10)
     page = request.GET.get('page')
 
@@ -157,7 +157,8 @@ def home(request):
         all_advertisements = paginator.page(paginator.num_pages)
 
     return render(request, 'home.html',
-                  {'all_responses': all_responses, 'all_advertisements': all_advertisements, 'admin_news': admin_news})
+                  {'all_responses': all_responses, 'all_advertisements': all_advertisements, 'admin_news': admin_news,
+                   'user': user})
 
 
 logger = logging.getLogger(__name__)
