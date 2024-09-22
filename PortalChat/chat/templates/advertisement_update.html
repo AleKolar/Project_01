@@ -28,9 +28,11 @@
     {% csrf_token %}
     {{ form.as_p }}
 
-    <div class="embed-responsive">
+    <div class="embed-responsive" style="width: 165mm; height: 95mm;">
         <div class="embed-responsive-item">
-            <!-- Вставьте здесь код для встраивания видео -->
+            <video width="100%" height="100%" controls>
+                <source src="video_path">
+            </video>
         </div>
     </div>
 

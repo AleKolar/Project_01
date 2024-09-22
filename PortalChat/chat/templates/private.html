@@ -1,6 +1,9 @@
 {% extends "default_1.html" %}
 
 {% block content %}
+<a href="{% url 'advertisement_create' %}" class="btn btn-primary">Создать объявление</a>
+<a href="{% url 'home' %}">Вернуться на главную</a>
+
 <h1>Отклики пользователя</h1>
 
 <!-- Отображение всех объявлений пользователя с кнопкой "Редактировать" -->
@@ -51,8 +54,4 @@
         <li>Нет откликов на ваши объявления</li>
     {% endfor %}
 </ul>
-
-<!-- Кнопка для создания объявления -->
-<a href="{% url 'advertisement_create' %}" class="btn btn-primary">Создать объявление</a>
-<a href="{% url 'home' %}">Вернуться на главную</a>
 {% endblock %}
