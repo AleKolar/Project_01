@@ -2,7 +2,7 @@ import logging
 import os
 import random
 import string
-from django.contrib.auth import logout
+from django.contrib.auth import logout, authenticate, login
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
@@ -78,6 +78,10 @@ def registration_view(request):
             user.save()
 
             send_one_time_code_email.delay(user.pk)
+
+            # Аутентификация пользователя после регистрации
+            user = authenticate(username=user.username, password=form.cleaned_data['password'])
+            login(request, user)
 
             print(f'One-time code generated: {code}')
 
@@ -265,7 +269,6 @@ def user_responses(request, advertisement_id=None):
     form = AdvertisementForm()
     user_id = request.user.id
     user_advertisements = Advertisement.objects.filter(user_id=user_id)
-
     user_responses = models.Response.objects.filter(advertisement__in=user_advertisements)
 
     title = request.GET.get('title')
