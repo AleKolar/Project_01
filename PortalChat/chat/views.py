@@ -14,6 +14,8 @@ from django.utils import timezone
 from datetime import timedelta
 from django.shortcuts import render, redirect, get_object_or_404
 from django.views.generic import TemplateView
+from moviepy.video.io.VideoFileClip import VideoFileClip
+
 from . import models
 from .forms import RegistrationForm, ConfirmationForm, AdvertisementForm, ResponseForm
 
@@ -93,31 +95,6 @@ def registration_view(request):
         return render(request, 'registration.html', {'form': form})
 
 
-# ВВОДИМ КОД ПОДТВЕРЖДЕНИЯ
-def verify_code_view(request):
-    if request.method == 'POST':
-        code = request.POST.get('code')
-        user = CustomUser.objects.get(code=code)
-        user.is_verified = True
-        user.save()
-        return redirect('home')
-
-    return render(request, 'verify_code.html')
-
-
-# ОТПРАВЛЯЕТ КОД НА ПОЧТУ
-def login_user(request):
-    if request.user.is_authenticated:
-        user = request.user
-
-        send_confirmation_code.delay(user.pk)
-        print(f'Confirmation code sent to user: {user.code}')
-
-        return redirect('home')
-
-    return render(request, 'login.html', {'form': AuthenticationForm()})
-
-
 # ВХОД (АВТОРИЗАЦИЯ)
 class LoginUser(LoginView):
     form_class = AuthenticationForm
@@ -133,12 +110,36 @@ class LoginUser(LoginView):
         user.save()
         send_confirmation_code.delay(user.id)
 
-        return response
+        return redirect('verify_code')
+
+# ОТПРАВЛЯЕТ КОД НА ПОЧТУ
+def login_user(request):
+    if request.user.is_authenticated:
+        user = request.user
+
+        send_confirmation_code.delay(user.pk)
+        print(f'Confirmation code sent to user: {user.code}')
+
+        return redirect('verify_code_view')
+
+    return render(request, 'login.html', {'form': AuthenticationForm()})
+
+# ВВОДИМ КОД ПОДТВЕРЖДЕНИЯ
+def verify_code_view(request):
+    if request.method == 'POST':
+        code = request.POST.get('code')
+        try:
+            user = CustomUser.objects.get(code=code)
+            user.is_verified = True
+            user.save()
+            return redirect('home')
+        except CustomUser.DoesNotExist:
+            return HttpResponse("Invalid code entered. Please try again.", status=400)
+
+    return render(request, 'verify_code.html')
 
 
 # ЗАРЕГИСТРИРОВАННЫХ НАДЕЛЯЕМ ПОЛНОМОЧИЯМИ
-
-
 # ДОМАШНЯЯ
 from django.db.models import Q
 
@@ -218,6 +219,7 @@ class AdvertisementUpdateView(LoginRequiredMixin, UpdateView):
 
     # @staticmethod
     # def resize_image(image, output_path, width, height):
+    #     from PIL import Image
     #     img = Image.open(image)
     #     img_resized = img.resize((width, height))
     #     img_resized.save(output_path)
