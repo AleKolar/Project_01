@@ -41,7 +41,6 @@ class Advertisement(models.Model):
     ]
     category = models.CharField(max_length=20, choices=category_choices)
 
-
     def __str__(self):
         return self.title
 

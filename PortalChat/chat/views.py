@@ -173,6 +173,8 @@ class AdvertisementCreateView(LoginRequiredMixin, CreateView):
     model = Advertisement
     fields = ['title', 'text', 'category', 'image', 'video']
     template_name = 'advertisement_create.html'
+    permission_required = 'chat.custom_add_advertisement'
+    success_url = reverse_lazy('private')
 
     def dispatch(self, request, *args, **kwargs):
         return super().dispatch(request, *args, **kwargs)
@@ -210,6 +212,8 @@ class AdvertisementUpdateView(LoginRequiredMixin, UpdateView):
     model = Advertisement
     fields = ['title', 'text', 'category', 'image', 'video']
     template_name = 'advertisement_update.html'
+    permission_required = 'chat.custom_change_advertisement'
+    success_url = reverse_lazy('private')
 
     def dispatch(self, request, *args, **kwargs):
         obj = self.get_object()
