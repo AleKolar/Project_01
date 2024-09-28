@@ -7,8 +7,8 @@ from .views import registration_view, home, LoginUser, login_user, Advertisement
     AdvertisementUpdateView, verify_code_view, NewsletterCreateView, display_news, CustomLogoutView
 from django.urls import path
 
-router = DefaultRouter()
-router.register(r'your-endpoint', NewsletterCreateView, basename='your-unique-basename')
+# router = DefaultRouter()
+# router.register(r'your-endpoint', NewsletterCreateView, basename='your-unique-basename')
 # router.register(r'your-endpoint', NewsletterCreateAPIView, basename='your-unique-basename')
 
 urlpatterns = [
