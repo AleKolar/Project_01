@@ -33,8 +33,6 @@
                             <img src="{{ advertisement.image.url }}" alt="{{ advertisement.title }}">
                         {% endif %}
 
-                        <a href="{% url 'advertisement_update' pk=advertisement.id %}" class="btn btn-primary">Редактировать объявление</a>
-
                         <form action="{% url 'create_response' advertisement_id=advertisement.id %}" method="post">
                             {% csrf_token %}
                             <button type="submit" class="btn btn-success mt-2">Создать отклик</button>
